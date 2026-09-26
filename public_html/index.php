@@ -149,6 +149,10 @@ $displayTitle = htmlspecialchars($siteTitle);
 
         <main>
 
+            <?php if (empty($searchQuery) && empty($categoryFilter) && empty($tagFilter)): ?>
+                <?php renderWidgets('footer'); ?>
+            <?php endif; ?>
+
             <?php if (!empty($searchQuery)): ?>
                 <h2><?php echo htmlspecialchars($_btn_search . ': ' . $searchQuery); ?></h2>
             <?php elseif (!empty($categoryFilter)): ?>
@@ -217,8 +221,6 @@ $displayTitle = htmlspecialchars($siteTitle);
             </div>
             <?php endif; ?>
         </main>
-
-        <?php renderWidgets('footer'); ?>
 
         <footer>
             <p><?php echo htmlspecialchars($siteTitle); ?></p>

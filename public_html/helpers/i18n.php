@@ -238,7 +238,7 @@ function t($key) {
         'help_widget_content' => ['en' => 'Auto-detected: a YouTube/Vimeo/Dailymotion/SoundCloud URL is embedded; basic HTML (<b>, <a>, <ul>...) is allowed; plain text keeps line breaks and auto-links URLs.', 'es' => 'Detección automática: una URL de YouTube/Vimeo/Dailymotion/SoundCloud se muestra embebida; se permite HTML básico (<b>, <a>, <ul>...); el texto plano conserva saltos de línea y autoenlaza URLs.'],
         'lbl_widget_position' => ['en' => 'Order (lower goes first)', 'es' => 'Orden (menor primero)'],
         'wdg_module' => ['en' => 'Module', 'es' => 'Módulo'],
-        'wdg_module_help' => ['en' => 'Blocks appear on the homepage footer only, never inside posts. Disabled by default.', 'es' => 'Los bloques aparecen solo en el pie de la portada, nunca dentro de los posts. Desactivado por defecto.'],
+        'wdg_module_help' => ['en' => 'Blocks appear on the homepage, above the post list. Disabled by default.', 'es' => 'Los bloques aparecen en la portada, encima del listado de posts. Desactivado por defecto.'],
         'wdg_module_enabled' => ['en' => 'Blocks module is active.', 'es' => 'El módulo de bloques está activo.'],
         'wdg_module_disabled' => ['en' => 'Blocks module is disabled: blocks are not shown on the site.', 'es' => 'El módulo de bloques está desactivado: no se muestran en el sitio.'],
         'btn_widget_enable' => ['en' => 'Activate module', 'es' => 'Activar módulo'],

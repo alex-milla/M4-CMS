@@ -10,7 +10,7 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 - RSS feed, XML sitemap and custom 404 page
 - SEO-friendly URLs
 - Admin panel: dashboard KPIs, post management, bulk actions, settings and logs
-- Optional **Blocks module**: free-form content on the homepage footer (plain text with auto-linked URLs, sanitized basic HTML, or an auto-detected media embed), disabled by default
+- Optional **Blocks module**: free-form content at the top of the homepage, above the post list (plain text with auto-linked URLs, sanitized basic HTML, or an auto-detected media embed), disabled by default
 - One-click updates from GitHub Releases with SHA-256 manifests, automatic backups and restore
 - Multilingual UI (English / Spanish)
 - Inline SVG icons, no external icon libraries
