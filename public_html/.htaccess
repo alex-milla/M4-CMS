@@ -12,7 +12,7 @@
         Require all denied
     </FilesMatch>
     # Utilidades sensibles u obsoletas
-    <FilesMatch "^(admin_config|reset-admin|install|cleanup|fix-bom)\.php$">
+    <FilesMatch "^(admin_config|install|cleanup|fix-bom)\.php$">
         Require all denied
     </FilesMatch>
 </IfModule>
@@ -25,7 +25,7 @@
         Order allow,deny
         Deny from all
     </FilesMatch>
-    <FilesMatch "^(admin_config|reset-admin|install|cleanup|fix-bom)\.php$">
+    <FilesMatch "^(admin_config|install|cleanup|fix-bom)\.php$">
         Order allow,deny
         Deny from all
     </FilesMatch>

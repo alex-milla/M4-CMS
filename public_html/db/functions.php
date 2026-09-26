@@ -547,9 +547,6 @@ function verifyAdminCredential($inputUser, $inputPassword) {
         }
     } catch (\Throwable $e) { /* DB no disponible */ }
 
-    // Sin configuración externa, credenciales de emergencia
-    if ($inputUser === 'admin' && $inputPassword === 'admin123') return true;
-
     return false;
 }
 

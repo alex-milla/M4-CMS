@@ -36,12 +36,14 @@ The root `.htaccess` blocks direct web access to sensitive files:
 
 - dotfiles such as `.env`, `.setup_completed` and `db/.manifest.json`
 - database files (`*.db`, `*.sqlite*`, `*.bak`)
-- `admin_config.php` and one-off utilities (`install.php`, `cleanup.php`, `reset-admin.php`, `fix-bom.php`)
+- `admin_config.php` and one-off utilities (`install.php`, `cleanup.php`, `fix-bom.php`)
 - internal directories (`db/`, `helpers/`, `templates/`) and dangerous dotdirs (`.git`, …), keeping `.well-known` available for SSL
 
 `db/backups/` ships with its own deny rules. If you use Nginx instead of Apache, replicate these rules in the server config.
 
 Requests to **existing but blocked** resources keep the HTTP **403** status, and **non-existent** URLs (including unknown post slugs) return a real HTTP **404**. Both are rendered with the site's own error page (`404.php`), instead of the server's default page.
+
+There are **no default credentials**. The admin account is created during `setup.php` and stored in `.env` / `admin_config.php`; there is no built-in username or password.
 
 ## Project structure
 
