@@ -69,6 +69,8 @@ list($theme_lbl, )     = t('admin_theme_label');
 list($_lbl_lang, )     = t('lbl_lang');
 list($btn_new_post, )  = t('btn_new_post');
 list($nav_logs, )      = t('nav_logs');
+list($nav_update, )    = t('nav_update');
+list($sys_section, )   = t('admin_system_section');
 
 // Traducciones para dashboard
 list($dashboard_title, ) = t('admin_dashboard_title');
@@ -119,6 +121,12 @@ list($quick_actions, ) = t('admin_quick_actions');
             <a href="logs.php">
                 <?php echo finsec_icon('history', 18); ?>
                 <span><?php echo htmlspecialchars($nav_logs); ?></span>
+            </a>
+
+            <div class="admin-nav-section"><?php echo htmlspecialchars($sys_section); ?></div>
+            <a href="update.php">
+                <?php echo finsec_icon('download', 18); ?>
+                <span><?php echo htmlspecialchars($nav_update); ?></span>
             </a>
 
             <div class="admin-nav-section">&nbsp;</div>
@@ -209,6 +217,10 @@ list($quick_actions, ) = t('admin_quick_actions');
                 <a href="logs.php" class="admin-quick-action">
                     <span class="icon"><?php echo finsec_icon('history', 18); ?></span>
                     <span><?php echo htmlspecialchars($nav_logs); ?></span>
+                </a>
+                <a href="update.php" class="admin-quick-action">
+                    <span class="icon"><?php echo finsec_icon('download', 18); ?></span>
+                    <span><?php echo htmlspecialchars($nav_update); ?></span>
                 </a>
             </div>
         </div>

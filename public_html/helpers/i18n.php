@@ -204,6 +204,31 @@ function t($key) {
         'admin_stats_draft' => ['en' => 'Drafts', 'es' => 'Borradores'],
         'admin_stats_scheduled' => ['en' => 'Scheduled', 'es' => 'Programados'],
         'admin_quick_actions' => ['en' => 'Quick Actions', 'es' => 'Acciones rápidas'],
+
+        // --- Sistema de actualizaciones ---
+        'nav_update' => ['en' => 'Updates', 'es' => 'Actualizaciones'],
+        'admin_system_section' => ['en' => 'System', 'es' => 'Sistema'],
+        'update_check_hint' => ['en' => 'Checks the latest GitHub Release and updates the application files.', 'es' => 'Consulta la última Release de GitHub y actualiza los archivos de la aplicación.'],
+        'update_repo' => ['en' => 'Repository', 'es' => 'Repositorio'],
+        'update_installed_version' => ['en' => 'Installed version', 'es' => 'Versión instalada'],
+        'update_latest_release' => ['en' => 'Latest release', 'es' => 'Última versión'],
+        'update_published' => ['en' => 'Published', 'es' => 'Publicada'],
+        'update_release_notes' => ['en' => 'Release notes', 'es' => 'Notas de la versión'],
+        'update_unknown' => ['en' => 'Unknown', 'es' => 'Desconocida'],
+        'update_btn_install' => ['en' => 'Check & install latest release', 'es' => 'Buscar e instalar la última versión'],
+        'update_btn_force' => ['en' => 'Force reinstall latest', 'es' => 'Reinstalar la última versión'],
+        'update_already_latest' => ['en' => 'You are already on the latest version.', 'es' => 'Ya tienes la última versión.'],
+        'update_err_no_release' => ['en' => 'No releases found. Publish a release on GitHub first.', 'es' => 'No se encontraron releases. Publica una release en GitHub primero.'],
+        'update_preserve_note' => ['en' => 'Your database, config.php, .env and admin_config.php are never overwritten. A code backup is created before every update.', 'es' => 'Tu base de datos, config.php, .env y admin_config.php nunca se sobrescriben. Se crea una copia del código antes de cada actualización.'],
+        'update_backups' => ['en' => 'Backups', 'es' => 'Copias de seguridad'],
+        'update_no_backups' => ['en' => 'No backups yet.', 'es' => 'Aún no hay copias de seguridad.'],
+        'update_tbl_backup' => ['en' => 'Backup', 'es' => 'Copia'],
+        'update_tbl_date' => ['en' => 'Date', 'es' => 'Fecha'],
+        'update_tbl_actions' => ['en' => 'Actions', 'es' => 'Acciones'],
+        'update_btn_restore' => ['en' => 'Restore', 'es' => 'Restaurar'],
+        'update_confirm_restore' => ['en' => 'Restore this backup? The current code will be backed up first.', 'es' => '¿Restaurar esta copia? El código actual se respaldará antes.'],
+        'update_action_install' => ['en' => 'Update to', 'es' => 'Actualizar a'],
+        'update_action_restore' => ['en' => 'Restore backup', 'es' => 'Restaurar copia'],
     ];
 
     return [$translations[$key][$lang] ?? $key, $lang];

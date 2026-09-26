@@ -20,6 +20,11 @@ public_html/install.php
 backup_snapshot_*/
 *.bak
 
+# Copias de seguridad del updater (conservar solo los guardas)
+public_html/db/backups/*
+!public_html/db/backups/.htaccess
+!public_html/db/backups/index.php
+
 # Tools y cachés locales
 .aider.tags.cache.v4/
 hash/

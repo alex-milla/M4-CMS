@@ -10,6 +10,7 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 - RSS feed, XML sitemap and custom 404 page
 - SEO-friendly URLs
 - Admin panel: dashboard KPIs, post management, bulk actions, settings and logs
+- One-click updates from GitHub Releases with automatic code backups and restore
 - Multilingual UI (English / Spanish)
 - Inline SVG icons, no external icon libraries
 
@@ -35,7 +36,8 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 public_html/
 ├── assets/         Frontend styles (FinSec)
 ├── db/             Database connection and data functions
-├── entrada/        Admin panel (dashboard, posts, settings, logs, login)
+│   └── backups/    Update backups (web access denied)
+├── entrada/        Admin panel (dashboard, posts, settings, logs, updates, login)
 ├── helpers/        i18n, theme, icons and content helpers
 ├── templates/      Shared layouts
 ├── index.php       Public home
@@ -47,12 +49,23 @@ public_html/
 ├── sitemap.php     XML sitemap
 ├── 404.php         Error page
 ├── setup.php       Installer
+├── VERSION         Installed version
 └── config.php      Bootstrap and configuration
 ```
 
 ## Themes
 
 Two themes are available: `finsec` (light, default) and `finsec-dark` (dark). Switch between them from the header toggle; the choice is persisted per session and in the database.
+
+## Updates
+
+The admin panel includes an updater (`entrada/update.php`, under **System → Updates**). It checks the latest release of this repository on GitHub, downloads the release ZIP and copies the application files over the current installation.
+
+- A code backup is created in `public_html/db/backups/` before every update and restore.
+- `config.php`, `.env`, `admin_config.php` and the SQLite database are **never** overwritten.
+- If the admin folder has been renamed, the updater remaps the package's `entrada/` folder to the current admin path automatically.
+- The repository is public, so no token is required. To raise the GitHub API rate limit, set a `GITHUB_TOKEN` environment variable.
+- The updater needs a ZIP extractor: the `zip` extension (`ZipArchive`), `PharData`, or the `unzip` binary.
 
 ## License
 

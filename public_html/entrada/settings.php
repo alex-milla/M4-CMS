@@ -38,6 +38,8 @@ list($page_title, )     = t('nav_settings');
 list($manage_posts, )   = t('admin_manage_posts');
 list($btn_new_post, )   = t('btn_new_post');
 list($nav_logs, )       = t('nav_logs');
+list($nav_update, )     = t('nav_update');
+list($sys_section, )    = t('admin_system_section');
 list($nav_dashboard, )  = t('admin_dashboard_title');
 list($nav_site, )       = t('nav_go_to_site');
 list($nav_logout, )     = t('nav_logout');
@@ -171,6 +173,12 @@ try {
             <a href="logs.php">
                 <?php echo finsec_icon('history', 18); ?>
                 <span><?php echo htmlspecialchars($nav_logs); ?></span>
+            </a>
+
+            <div class="admin-nav-section"><?php echo htmlspecialchars($sys_section); ?></div>
+            <a href="update.php">
+                <?php echo finsec_icon('download', 18); ?>
+                <span><?php echo htmlspecialchars($nav_update); ?></span>
             </a>
 
             <div class="admin-nav-section">&nbsp;</div>

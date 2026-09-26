@@ -48,6 +48,8 @@ list($lbl_page, )       = t('lbl_page');
 list($lbl_of, )         = t('lbl_of');
 list($btn_prev, )       = t('btn_prev');
 list($btn_next, )       = t('btn_next');
+list($nav_update, )     = t('nav_update');
+list($sys_section, )    = t('admin_system_section');
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $lang; ?>" data-theme="<?php echo htmlspecialchars($theme); ?>">
@@ -89,6 +91,12 @@ list($btn_next, )       = t('btn_next');
             <a href="logs.php" class="active">
                 <?php echo finsec_icon('history', 18); ?>
                 <span><?php echo htmlspecialchars($page_title); ?></span>
+            </a>
+
+            <div class="admin-nav-section"><?php echo htmlspecialchars($sys_section); ?></div>
+            <a href="update.php">
+                <?php echo finsec_icon('download', 18); ?>
+                <span><?php echo htmlspecialchars($nav_update); ?></span>
             </a>
 
             <div class="admin-nav-section">&nbsp;</div>

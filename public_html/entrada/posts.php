@@ -34,6 +34,8 @@ list($lbl_select_all, )    = t('btn_select_all');
 list($btn_delete_sel, )    = t('btn_delete_selected');
 list($nav_logs, )          = t('nav_logs');
 list($nav_settings, )      = t('admin_settings');
+list($nav_update, )        = t('nav_update');
+list($sys_section, )       = t('admin_system_section');
 list($nav_dashboard, )     = t('admin_dashboard_title');
 list($_lbl_lang, )         = t('lbl_lang');
 list($theme_lbl, )         = t('admin_theme_label');
@@ -141,6 +143,12 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
             <a href="logs.php">
                 <?php echo finsec_icon('history', 18); ?>
                 <span><?php echo htmlspecialchars($nav_logs); ?></span>
+            </a>
+
+            <div class="admin-nav-section"><?php echo htmlspecialchars($sys_section); ?></div>
+            <a href="update.php">
+                <?php echo finsec_icon('download', 18); ?>
+                <span><?php echo htmlspecialchars($nav_update); ?></span>
             </a>
 
             <div class="admin-nav-section">&nbsp;</div>
