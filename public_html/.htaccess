@@ -39,6 +39,12 @@ ErrorDocument 404 /404.php
 # Página propia para accesos denegados (mantiene el estado HTTP 403)
 ErrorDocument 403 /404.php
 
+# Directorios internos: acceso web prohibido (403 -> página de error propia)
+RewriteRule ^db(/|$) - [F,L]
+RewriteRule ^(helpers|templates)(/|$) - [F,L]
+# Dotdirs peligrosos (.git, .aider...) sin bloquear .well-known (necesario para SSL)
+RewriteRule ^\.(?!well-known(/|$))[^/]+(/|$) - [F,L]
+
 # Redireccion 301: /post/mi-slug -> /mi-slug (para compatibilidad con URLs antiguas)
 RewriteRule ^post/([a-z0-9\-]+)/?$ /$1 [R=301,L]
 

@@ -70,7 +70,9 @@ if ($post && !$isAdmin && strcmp($post['created_at'], nowLocalString()) > 0) {
 }
 
 if (!$post) {
-    http_response_code(404);
+    // Contenido inexistente o no visible: usar la página de error personalizada.
+    include __DIR__ . '/404.php';
+    exit;
 }
 
 // Theme (FinSec claro/oscuro)
@@ -106,7 +108,7 @@ list($_status_updated, )   = t('msg_status_updated');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $post ? htmlspecialchars($post['title']) : htmlspecialchars($_no_posts); ?></title>
+    <title><?php echo htmlspecialchars($post['title']); ?></title>
     <link rel="stylesheet" href="assets/finsec.css">
 </head>
 <body class="<?php echo $class; ?>">
@@ -119,11 +121,7 @@ list($_status_updated, )   = t('msg_status_updated');
         </header>
 
         <main>
-            <?php if (!$post): ?>
-                <h2><?php echo htmlspecialchars($_no_posts); ?></h2>
-                <p><a href="index.php"><?php echo htmlspecialchars($_back); ?></a></p>
-            <?php else: ?>
-                <article class="post">
+            <article class="post">
                 <h2><?php echo htmlspecialchars($post['title']); ?></h2>
                 <p class="date">
                     <?php echo finsec_icon('calendar', 12); ?>
@@ -189,7 +187,6 @@ list($_status_updated, )   = t('msg_status_updated');
                 </article>
 
                 <p style="margin-top: 24px;"><a href="index.php"><?php echo finsec_icon('arrow-left', 14); ?> <?php echo htmlspecialchars($_back); ?></a></p>
-            <?php endif; ?>
         </main>
 
         <footer>
