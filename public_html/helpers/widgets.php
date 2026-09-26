@@ -5,6 +5,7 @@
 // de proveedores, nunca desde HTML pegado por el usuario.
 
 include_once __DIR__ . '/../db/functions.php';
+include_once __DIR__ . '/content.php';
 
 // URL http/https válida (evita javascript:, data:, etc.)
 function widgetValidUrl($url) {
@@ -68,18 +69,145 @@ function widgetEmbedUrl($url) {
     return null;
 }
 
-// Parsear las líneas "texto | https://..." del tipo links.
-// Devuelve [[label, url], ...] solo con URLs http/https válidas.
-function widgetParseLinks($content) {
-    $links = [];
-    foreach (preg_split('/\r\n|\r|\n/', (string)$content) as $line) {
-        $line = trim($line);
-        if ($line === '' || strpos($line, '|') === false) continue;
-        list($label, $url) = array_map('trim', explode('|', $line, 2));
-        if ($label === '' || !widgetValidUrl($url)) continue;
-        $links[] = [$label, $url];
+// Sanea HTML básico (allowlist). Elimina etiquetas peligrosas con su contenido,
+// desenvuelve las desconocidas y limpia atributos. Pensado para contenido
+// escrito por el admin; el frontend nunca confía en HTML pegado sin filtrar.
+function widgetSanitizeHtml($html) {
+    $allowed = ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'del',
+        'ul', 'ol', 'li', 'a', 'h3', 'h4', 'h5', 'blockquote', 'code', 'pre',
+        'span', 'hr'];
+    $dangerous = ['script', 'style', 'iframe', 'object', 'embed', 'form',
+        'input', 'button', 'textarea', 'select', 'option', 'svg', 'math',
+        'link', 'meta', 'base', 'title', 'head', 'html', 'body', 'frame',
+        'frameset', 'applet', 'audio', 'video', 'source', 'track', 'canvas'];
+
+    if (!class_exists('DOMDocument')) {
+        return nl2br(htmlspecialchars($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
-    return $links;
+
+    $doc = new DOMDocument('1.0', 'UTF-8');
+    $prev = libxml_use_internal_errors(true);
+    $ok = $doc->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    libxml_clear_errors();
+    libxml_use_internal_errors($prev);
+    if (!$ok) {
+        return nl2br(htmlspecialchars($html, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    }
+    foreach (iterator_to_array($doc->childNodes) as $child) {
+        if ($child->nodeType === XML_PI_NODE) {
+            $doc->removeChild($child);
+        }
+    }
+
+    widgetSanitizeNode($doc, $allowed, $dangerous);
+
+    $out = '';
+    foreach ($doc->childNodes as $child) {
+        $out .= $doc->saveHTML($child);
+    }
+    return $out;
+}
+
+// Recorrido recursivo del DOM aplicando la allowlist. Uso interno.
+function widgetSanitizeNode(DOMNode $node, array $allowed, array $dangerous) {
+    for ($i = $node->childNodes->length - 1; $i >= 0; $i--) {
+        $child = $node->childNodes->item($i);
+        if ($child->nodeType === XML_TEXT_NODE) {
+            continue;
+        }
+        if ($child->nodeType !== XML_ELEMENT_NODE) {
+            $node->removeChild($child);
+            continue;
+        }
+
+        $tag = strtolower($child->nodeName);
+
+        // Etiquetas peligrosas: fuera con todo su contenido.
+        if (in_array($tag, $dangerous, true)) {
+            $node->removeChild($child);
+            continue;
+        }
+
+        // Desconocidas: desenvolver (subir los hijos, quitar la etiqueta).
+        if (!in_array($tag, $allowed, true)) {
+            while ($child->firstChild) {
+                $node->insertBefore($child->firstChild, $child);
+            }
+            $node->removeChild($child);
+            continue;
+        }
+
+        // Limpiar atributos: solo se conservan href/title en <a>.
+        if ($child->hasAttributes()) {
+            for ($a = $child->attributes->length - 1; $a >= 0; $a--) {
+                $attr = $child->attributes->item($a);
+                $name = strtolower($attr->name);
+                if ($tag === 'a' && $name === 'href' && widgetValidHref($attr->value)) {
+                    continue;
+                }
+                if ($tag === 'a' && $name === 'title') {
+                    continue;
+                }
+                $child->removeAttribute($attr->name);
+            }
+        }
+        if ($tag === 'a') {
+            $href = $child->getAttribute('href');
+            if ($href === '' || !widgetValidHref($href)) {
+                while ($child->firstChild) {
+                    $node->insertBefore($child->firstChild, $child);
+                }
+                $node->removeChild($child);
+                continue;
+            }
+            $child->setAttribute('target', '_blank');
+            $child->setAttribute('rel', 'noopener noreferrer');
+        }
+
+        widgetSanitizeNode($child, $allowed, $dangerous);
+    }
+}
+
+// href permitido en HTML saneado: http/https o mailto.
+function widgetValidHref($href) {
+    $href = trim((string)$href);
+    return $href !== '' && preg_match('#^(https?://|mailto:)#i', $href) === 1;
+}
+
+// Pintar el contenido de un bloque con detección automática:
+//  - una única URL de medios soportada -> embed;
+//  - HTML básico -> saneado y pintado;
+//  - texto plano -> párrafos, saltos de línea y URLs autoenlazadas.
+function widgetRenderContent($content, $title = '') {
+    $trim = trim((string)$content);
+    if ($trim === '') return '';
+
+    // 1) URL única de un proveedor soportado: embed.
+    if (preg_match('~^https?://\S+$~i', $trim)) {
+        $embed = widgetEmbedUrl($trim);
+        if ($embed !== null) {
+            return '<div class="widget-embed"><iframe src="' . htmlspecialchars($embed, ENT_QUOTES)
+                . '" loading="lazy" allowfullscreen '
+                . 'sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"'
+                . ($title !== '' ? ' title="' . htmlspecialchars($title, ENT_QUOTES) . '"' : '')
+                . '></iframe></div>';
+        }
+    }
+
+    // 2) HTML básico: sanear y devolver.
+    if (preg_match('#</?[a-z][a-z0-9]*(\s[^>]*)?>#i', $trim)) {
+        return '<div class="widget-content">' . widgetSanitizeHtml($trim) . '</div>';
+    }
+
+    // 3) Texto plano: párrafos, saltos y URLs autoenlazadas.
+    $raw = htmlspecialchars($trim, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $out = '';
+    foreach (preg_split("/\n\s*\n+/", $raw) as $para) {
+        $para = trim($para);
+        if ($para === '') continue;
+        $out .= '<p class="widget-text">' . nl2br(autoLinkUrls($para)) . '</p>';
+    }
+    return $out;
 }
 
 // Pintar la sección de bloques de una zona. Si el módulo está desactivado
@@ -95,40 +223,12 @@ function renderWidgets($zone = 'footer') {
 
     echo '<section class="site-widgets">';
     foreach ($widgets as $w) {
-        $type = $w['type'] ?? 'links';
+        $title = trim((string)($w['title'] ?? ''));
         echo '<div class="widget">';
-        echo '<h3 class="widget-title">' . htmlspecialchars($w['title']) . '</h3>';
-
-        if ($type === 'links') {
-            $links = widgetParseLinks($w['content'] ?? '');
-            if (!empty($links)) {
-                echo '<ul class="widget-links">';
-                foreach ($links as [$label, $url]) {
-                    echo '<li><a href="' . htmlspecialchars($url, ENT_QUOTES) . '" target="_blank" rel="noopener noreferrer">' . htmlspecialchars($label) . '</a></li>';
-                }
-                echo '</ul>';
-            }
-        } elseif ($type === 'embed') {
-            $embed = widgetEmbedUrl($w['url'] ?? '');
-            if ($embed !== null) {
-                echo '<div class="widget-embed">';
-                echo '<iframe src="' . htmlspecialchars($embed, ENT_QUOTES) . '" loading="lazy" allowfullscreen '
-                    . 'sandbox="allow-scripts allow-same-origin allow-popups allow-presentation" title="' . htmlspecialchars($w['title'], ENT_QUOTES) . '"></iframe>';
-                echo '</div>';
-            } elseif (widgetValidUrl($w['url'] ?? '')) {
-                // Proveedor no soportado: caer a enlace plano, sin iframe
-                echo '<p><a href="' . htmlspecialchars($w['url'], ENT_QUOTES) . '" target="_blank" rel="noopener noreferrer">' . htmlspecialchars($w['url']) . '</a></p>';
-            }
-        } else { // text
-            $text = trim((string)($w['content'] ?? ''));
-            if ($text !== '') {
-                echo '<p class="widget-text">' . nl2br(htmlspecialchars($text, ENT_QUOTES)) . '</p>';
-            }
-            if (widgetValidUrl($w['url'] ?? '')) {
-                echo '<p><a class="widget-cta" href="' . htmlspecialchars($w['url'], ENT_QUOTES) . '" target="_blank" rel="noopener noreferrer">' . htmlspecialchars($w['title']) . ' &#8594;</a></p>';
-            }
+        if ($title !== '') {
+            echo '<h3 class="widget-title">' . htmlspecialchars($title) . '</h3>';
         }
-
+        echo widgetRenderContent($w['content'] ?? '', $title);
         echo '</div>';
     }
     echo '</section>';

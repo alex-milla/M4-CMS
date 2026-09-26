@@ -708,7 +708,13 @@ body.theme-finsec-dark .tags a:hover {
 }
 .widget-links a:hover { color: var(--brand-500); }
 .widget-text { margin: 0 0 8px 0; color: var(--text-2); }
-.widget-cta { font-weight: 600; }
+.widget-text:last-child, .widget-content > :last-child { margin-bottom: 0; }
+.widget-content { color: var(--text-2); }
+.widget-content p { margin: 0 0 8px 0; }
+.widget-content a, .widget-text a { color: var(--brand-500); }
+.widget-content ul, .widget-content ol { margin: 0 0 8px 0; padding-left: 18px; }
+.widget-content blockquote { margin: 0 0 8px 0; padding-left: 10px; border-left: 2px solid var(--border-soft); color: var(--text-3); }
+.widget-content pre, .widget-content code { font-family: var(--mono, monospace); font-size: 0.8125rem; }
 .widget-embed { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: var(--radius-md); }
 .widget-embed iframe {
     position: absolute;

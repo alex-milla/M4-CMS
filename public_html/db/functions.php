@@ -447,12 +447,6 @@ function widgetsModuleEnabled() {
     }
 }
 
-// Normalizar tipo de bloque (links | text | embed)
-function normalizeWidgetType($type) {
-    $type = strtolower(trim((string)$type));
-    return in_array($type, ['links', 'text', 'embed'], true) ? $type : 'links';
-}
-
 // Normalizar estado de bloque (published | draft)
 function normalizeWidgetStatus($status) {
     $status = strtolower(trim((string)$status));
@@ -488,32 +482,27 @@ function getWidgetById($id) {
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-// Crear un bloque
-function createWidget($title, $type, $content, $url, $position = 0, $status = 'published') {
+// Crear un bloque (contenido libre: texto, HTML básico o URL embebida)
+function createWidget($title, $content, $position = 0, $status = 'published') {
     global $db;
-    if (empty($title)) return false;
-    $stmt = $db->prepare("INSERT INTO widgets (title, type, content, url, zone, position, status) VALUES (?, ?, ?, ?, 'footer', ?, ?)");
+    $stmt = $db->prepare("INSERT INTO widgets (title, content, zone, position, status) VALUES (?, ?, 'footer', ?, ?)");
     return $stmt->execute([
-        trim($title),
-        normalizeWidgetType($type),
+        trim((string)$title),
         (string)$content,
-        trim((string)$url),
         (int)$position,
         normalizeWidgetStatus($status)
     ]);
 }
 
 // Actualizar un bloque
-function updateWidget($id, $title, $type, $content, $url, $position = 0, $status = 'published') {
+function updateWidget($id, $title, $content, $position = 0, $status = 'published') {
     global $db;
     $id = (int)$id;
-    if ($id <= 0 || empty($title)) return false;
-    $stmt = $db->prepare("UPDATE widgets SET title = ?, type = ?, content = ?, url = ?, position = ?, status = ? WHERE id = ?");
+    if ($id <= 0) return false;
+    $stmt = $db->prepare("UPDATE widgets SET title = ?, content = ?, position = ?, status = ? WHERE id = ?");
     return $stmt->execute([
-        trim($title),
-        normalizeWidgetType($type),
+        trim((string)$title),
         (string)$content,
-        trim((string)$url),
         (int)$position,
         normalizeWidgetStatus($status),
         $id

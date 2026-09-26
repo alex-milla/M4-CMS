@@ -28,9 +28,9 @@ list($sys_section, )       = t('admin_system_section');
 list($nav_dashboard, )     = t('admin_dashboard_title');
 list($_lbl_lang, )         = t('lbl_lang');
 list($theme_lbl, )         = t('admin_theme_label');
-list($lbl_type, )          = t('lbl_widget_type');
 list($lbl_content, )       = t('lbl_widget_content');
-list($lbl_url, )           = t('lbl_widget_url');
+list($ph_widget_content, ) = t('ph_widget_content');
+list($help_widget_content, ) = t('help_widget_content');
 list($lbl_position, )      = t('lbl_widget_position');
 list($lbl_status, )        = t('lbl_status');
 list($lbl_published, )     = t('lbl_published');
@@ -53,9 +53,6 @@ list($wdg_status, )        = t('widget_status_msg');
 list($wdg_module_msg, )    = t('widget_module_msg');
 list($err_required, )      = t('err_widget_required');
 list($confirm_delete, )    = t('confirm_delete_widget');
-list($type_links, )        = t('wdg_type_links');
-list($type_text, )         = t('wdg_type_text');
-list($type_embed, )        = t('wdg_type_embed');
 $lang = $_SESSION['lang'] ?? 'es';
 
 // Theme (FinSec claro/oscuro) — initTheme persiste en DB + sesión
@@ -65,25 +62,10 @@ $class = 'theme-' . htmlspecialchars($theme);
 
 createTable();
 
-$widgetTypes = [
-    'links' => $type_links,
-    'text'  => $type_text,
-    'embed' => $type_embed,
-];
-
-// Validar datos de un bloque según su tipo. Devuelve null si OK, o un mensaje de error.
-function validateWidgetInput($title, $type, $content, $url) {
+// Validar datos de un bloque. Devuelve null si OK, o un mensaje de error.
+function validateWidgetInput($content) {
     global $err_required;
-    if (trim((string)$title) === '') return $err_required;
-    if ($type === 'embed') {
-        if (!widgetValidUrl($url)) return $err_required;
-    } elseif ($type === 'text') {
-        if (trim((string)$content) === '') return $err_required;
-        if (trim((string)$url) !== '' && !widgetValidUrl($url)) return $err_required;
-    } else { // links
-        if (trim((string)$content) === '') return $err_required;
-        if (empty(widgetParseLinks($content))) return $err_required;
-    }
+    if (trim((string)$content) === '') return $err_required;
     return null;
 }
 
@@ -102,19 +84,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['module_toggle'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['widget_save'])) {
     $id       = (int)($_POST['widget_id'] ?? 0);
     $title    = trim((string)($_POST['title'] ?? ''));
-    $type     = normalizeWidgetType($_POST['type'] ?? 'links');
     $content  = (string)($_POST['content'] ?? '');
-    $url      = trim((string)($_POST['url'] ?? ''));
     $position = (int)($_POST['position'] ?? 0);
     $status   = normalizeWidgetStatus($_POST['status'] ?? 'published');
 
-    $error_txt = validateWidgetInput($title, $type, $content, $url);
+    $error_txt = validateWidgetInput($content);
     if ($error_txt === '') {
         if ($id > 0) {
-            updateWidget($id, $title, $type, $content, $url, $position, $status);
+            updateWidget($id, $title, $content, $position, $status);
             logAdminEvent('widget_updated', $title);
         } else {
-            createWidget($title, $type, $content, $url, $position, $status);
+            createWidget($title, $content, $position, $status);
             logAdminEvent('widget_created', $title);
         }
         header('Location: widgets.php?saved=1');
@@ -138,7 +118,7 @@ if (isset($_GET['toggle_id'])) {
     $w = getWidgetById($id);
     if ($w) {
         $newStatus = ($w['status'] === 'published') ? 'draft' : 'published';
-        updateWidget($id, $w['title'], $w['type'], $w['content'] ?? '', $w['url'] ?? '', (int)$w['position'], $newStatus);
+        updateWidget($id, $w['title'], $w['content'] ?? '', (int)$w['position'], $newStatus);
         logAdminEvent('widget_updated', $w['title'] . ' -> ' . $newStatus);
     }
     header('Location: widgets.php?status=1');
@@ -306,27 +286,13 @@ $widget_count = countWidgets();
 
                     <div class="admin-form-group">
                         <label for="w_title"><?php echo htmlspecialchars(t('post_title')[0]); ?></label>
-                        <input type="text" id="w_title" name="title" required maxlength="120" value="<?php echo htmlspecialchars($editing['title'] ?? ''); ?>">
-                    </div>
-
-                    <div class="admin-form-group">
-                        <label for="w_type"><?php echo htmlspecialchars($lbl_type); ?></label>
-                        <select id="w_type" name="type" onchange="widgetTypeChanged();">
-                            <?php foreach ($widgetTypes as $k => $label): ?>
-                                <option value="<?php echo $k; ?>"<?php echo (($editing['type'] ?? 'links') === $k) ? ' selected' : ''; ?>><?php echo htmlspecialchars($label); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <input type="text" id="w_title" name="title" maxlength="120" value="<?php echo htmlspecialchars($editing['title'] ?? ''); ?>">
                     </div>
 
                     <div class="admin-form-group" id="w_content_group">
                         <label for="w_content"><?php echo htmlspecialchars($lbl_content); ?></label>
-                        <textarea id="w_content" name="content" rows="4" placeholder="<?php echo htmlspecialchars(t('ph_widget_content_links')[0]); ?>"><?php echo htmlspecialchars($editing['content'] ?? ''); ?></textarea>
-                        <p style="margin:6px 0 0 0;color:var(--text-3);font-size:0.75rem;" id="w_content_hint"><?php echo htmlspecialchars(t('ph_widget_content_links')[0]); ?></p>
-                    </div>
-
-                    <div class="admin-form-group" id="w_url_group">
-                        <label for="w_url"><?php echo htmlspecialchars($lbl_url); ?></label>
-                        <input type="text" id="w_url" name="url" value="<?php echo htmlspecialchars($editing['url'] ?? ''); ?>" placeholder="<?php echo htmlspecialchars(t('ph_widget_url_text')[0]); ?>">
+                        <textarea id="w_content" name="content" rows="6" placeholder="<?php echo htmlspecialchars($ph_widget_content); ?>"><?php echo htmlspecialchars($editing['content'] ?? ''); ?></textarea>
+                        <p style="margin:6px 0 0 0;color:var(--text-3);font-size:0.75rem;" id="w_content_hint"><?php echo htmlspecialchars($help_widget_content); ?></p>
                     </div>
 
                     <div class="admin-form-group">
@@ -357,7 +323,6 @@ $widget_count = countWidgets();
                         <tr>
                             <th>ID</th>
                             <th><?php echo htmlspecialchars(t('post_title')[0]); ?></th>
-                            <th><?php echo htmlspecialchars($lbl_type); ?></th>
                             <th><?php echo htmlspecialchars($lbl_position); ?></th>
                             <th><?php echo htmlspecialchars($lbl_status); ?></th>
                             <th><?php echo htmlspecialchars(t('tbl_col_actions')[0]); ?></th>
@@ -368,7 +333,6 @@ $widget_count = countWidgets();
                         <tr>
                             <td class="mono">#<?php echo (int)$w['id']; ?></td>
                             <td><?php echo htmlspecialchars($w['title']); ?></td>
-                            <td><?php echo htmlspecialchars($widgetTypes[$w['type']] ?? $w['type']); ?></td>
                             <td class="mono"><?php echo (int)$w['position']; ?></td>
                             <td>
                                 <?php if (($w['status'] ?? '') === 'draft'): ?>
@@ -399,34 +363,6 @@ $widget_count = countWidgets();
     </main>
 
     <script>
-    function widgetTypeChanged() {
-        var type = document.getElementById('w_type').value;
-        var contentGroup = document.getElementById('w_content_group');
-        var urlGroup = document.getElementById('w_url_group');
-        var urlInput = document.getElementById('w_url');
-        var hint = document.getElementById('w_content_hint');
-        var hints = {
-            links: <?php echo json_encode(t('ph_widget_content_links')[0]); ?>,
-            text: <?php echo json_encode(t('ph_widget_content_text')[0]); ?>,
-            embed: <?php echo json_encode(t('ph_widget_content_links')[0]); ?>
-        };
-        var placeholders = {
-            links: <?php echo json_encode(t('ph_widget_content_links')[0]); ?>,
-            text: <?php echo json_encode(t('ph_widget_content_text')[0]); ?>,
-            embed: <?php echo json_encode(t('ph_widget_content_links')[0]); ?>
-        };
-        var urlPh = {
-            links: <?php echo json_encode(t('ph_widget_url_text')[0]); ?>,
-            text: <?php echo json_encode(t('ph_widget_url_text')[0]); ?>,
-            embed: <?php echo json_encode(t('ph_widget_url_embed')[0]); ?>
-        };
-        contentGroup.style.display = (type === 'embed') ? 'none' : '';
-        urlGroup.style.display = (type === 'links') ? 'none' : '';
-        hint.textContent = hints[type] || '';
-        document.getElementById('w_content').placeholder = placeholders[type] || '';
-        urlInput.placeholder = urlPh[type] || '';
-    }
-    widgetTypeChanged();
     function toggleSidebar() {
         const sidebar = document.querySelector('.admin-sidebar');
         const overlay = document.querySelector('.admin-sidebar-overlay');
