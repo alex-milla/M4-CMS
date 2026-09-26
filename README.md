@@ -10,7 +10,7 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 - RSS feed, XML sitemap and custom 404 page
 - SEO-friendly URLs
 - Admin panel: dashboard KPIs, post management, bulk actions, settings and logs
-- One-click updates from GitHub Releases with automatic code backups and restore
+- One-click updates from GitHub Releases with SHA-256 manifests, automatic backups and restore
 - Multilingual UI (English / Spanish)
 - Inline SVG icons, no external icon libraries
 
@@ -25,10 +25,20 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 1. Upload the contents of `public_html/` to your web root.
 2. Make sure the web server can write to `public_html/db/`.
 3. Open `setup.php` in your browser and follow the steps to configure the site and create the admin account.
-4. Remove `setup.php` (or restrict access to it) once installation is complete.
+4. Remove `setup.php` (or restrict access to it) once installation is complete. It also deletes itself after a successful install.
 5. Sign in to the admin panel to start publishing.
 
 `db/cms.db`, `admin_config.php` and `.env` are never versioned; they are generated at install time.
+
+## Security
+
+The root `.htaccess` blocks direct web access to sensitive files:
+
+- dotfiles such as `.env`, `.setup_completed` and `db/.manifest.json`
+- database files (`*.db`, `*.sqlite*`, `*.bak`)
+- `admin_config.php` and one-off utilities (`install.php`, `cleanup.php`, `reset-admin.php`, `fix-bom.php`)
+
+`db/backups/` ships with its own deny rules. If you use Nginx instead of Apache, replicate these rules in the server config.
 
 ## Project structure
 
@@ -59,8 +69,11 @@ Two themes are available: `finsec` (light, default) and `finsec-dark` (dark). Sw
 
 ## Updates
 
-The admin panel includes an updater (`entrada/update.php`, under **System → Updates**). It checks the latest release of this repository on GitHub, downloads the release ZIP and copies the application files over the current installation.
+The admin panel includes an updater (`entrada/update.php`, under **System → Updates**). It checks the latest release of this repository on GitHub, downloads the release ZIP and synchronises the application files.
 
+- The updater computes a **SHA-256 manifest** of the release (source) and compares it with the installed manifest (`public_html/db/.manifest.json`, destination), so only new or changed files are copied.
+- Managed files that no longer exist in the release are **removed**, and obsolete/dangerous utilities (`reset-admin.php`, `install.php`, `cleanup.php`, `setup.php` on installed sites…) are deleted.
+- Files that do not belong to the project are never touched.
 - A code backup is created in `public_html/db/backups/` before every update and restore.
 - `config.php`, `.env`, `admin_config.php` and the SQLite database are **never** overwritten.
 - If the admin folder has been renamed, the updater remaps the package's `entrada/` folder to the current admin path automatically.

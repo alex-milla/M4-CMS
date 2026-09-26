@@ -16,6 +16,12 @@ env/
 public_html/cleanup.php
 public_html/install.php
 
+# Utilidades de emergencia (solo en local, nunca publicar)
+public_html/entrada/reset-admin.php
+
+# Manifiesto del updater (generado en runtime)
+public_html/db/.manifest.json
+
 # Backups y snapshots locales
 backup_snapshot_*/
 *.bak

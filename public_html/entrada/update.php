@@ -3,8 +3,11 @@
  * M4 CMS - Sistema de actualizaciones
  *
  * Descarga la última release publicada en GitHub (repo público) y actualiza
- * los archivos de la aplicación. Crea una copia de seguridad del código antes
- * de cada operación y permite restaurarla.
+ * los archivos de la aplicación mediante un manifiesto SHA-256 (origen/destino):
+ *  - copia solo ficheros nuevos o modificados,
+ *  - elimina ficheros gestionados que ya no existen en la release,
+ *  - elimina utilidades obsoletas/peligrosas (reset-admin, install, cleanup...),
+ *  - crea un backup del código antes de cada operación y permite restaurarlo.
  *
  * Nunca sobrescribe config.php, .env, admin_config.php ni la base de datos.
  */
@@ -23,6 +26,7 @@ include_once '../db/functions.php';
 include_once '../helpers/theme.php';
 include_once '../helpers/i18n.php';
 include_once '../helpers/icons.php';
+include_once '../helpers/updater.php';
 
 createTable();
 
@@ -58,6 +62,7 @@ $sensitive = [
     'admin_config.php',
     'cleanup.php',
     'install.php',
+    'setup.php',
     '.github_token',
     'db/cms.db',
     'README.md',
@@ -65,6 +70,12 @@ $sensitive = [
 ];
 $skipDirs     = ['.git', '.github', 'node_modules', '.release'];
 $skipPrefixes = ['db/backups/'];
+
+// Utilidades que se eliminan siempre en cada actualización.
+$forceDelete = ['entrada/reset-admin.php', 'install.php', 'cleanup.php', 'fix-bom.php'];
+if (is_file($appRoot . '/.setup_completed')) {
+    $forceDelete[] = 'setup.php';
+}
 
 // ---------------------------------------------------------------------------
 // CSRF (autocontenido, solo para esta página)
@@ -84,88 +95,6 @@ function validateCsrf(): void {
         http_response_code(403);
         exit('Invalid CSRF token');
     }
-}
-
-// ---------------------------------------------------------------------------
-// Utilidades de sistema de archivos
-// ---------------------------------------------------------------------------
-function rrmdir(string $dir): void {
-    if (!is_dir($dir)) return;
-    $files = array_diff(scandir($dir), ['.', '..']);
-    foreach ($files as $file) {
-        $path = $dir . '/' . $file;
-        is_dir($path) ? rrmdir($path) : @unlink($path);
-    }
-    @rmdir($dir);
-}
-
-/**
- * Copia un árbol de archivos aplicando exclusiones y remapeo de carpetas.
- * $remap  : ['origen' => 'destino'] a nivel de primer nivel (p. ej. entrada -> panel)
- * $sensitive : rutas relativas exactas que se omiten
- * $skipDirs  : nombres de carpeta de primer nivel que se omiten
- * $skipPrefixes : prefijos de ruta relativa que se omiten
- */
-function copyTreeMapped(string $src, string $dst, array $remap = [], array $sensitive = [], array $skipDirs = [], array $skipPrefixes = []): array {
-    $copied = 0;
-    $errors = [];
-    if (!is_dir($src)) {
-        return ['copied' => 0, 'errors' => ["Origen no encontrado: $src"]];
-    }
-    $rii = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($src, FilesystemIterator::SKIP_DOTS),
-        RecursiveIteratorIterator::LEAVES_ONLY
-    );
-    foreach ($rii as $file) {
-        if (!$file->isFile()) continue;
-        $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($src) + 1));
-        if ($relative === '') continue;
-        if (in_array($relative, $sensitive, true)) continue;
-        $parts = explode('/', $relative);
-        if (in_array($parts[0], $skipDirs, true)) continue;
-        $skip = false;
-        foreach ($skipPrefixes as $p) {
-            if (strpos($relative, $p) === 0) { $skip = true; break; }
-        }
-        if ($skip) continue;
-        if (isset($remap[$parts[0]])) {
-            $parts[0] = $remap[$parts[0]];
-        }
-        $target = rtrim($dst, '/\\') . '/' . implode('/', $parts);
-        if (!is_dir(dirname($target))) @mkdir(dirname($target), 0755, true);
-        if (@copy($file->getPathname(), $target)) {
-            $copied++;
-        } else {
-            $errors[] = $relative;
-        }
-    }
-    return ['copied' => $copied, 'errors' => $errors];
-}
-
-/**
- * Crea un backup del código actual en db/backups/backup_YYYYmmdd_His.
- * La carpeta admin se normaliza a "entrada" para poder remapearla al restaurar.
- */
-function ensureBackupGuards(string $dir): void {
-    $htaccess = $dir . '/.htaccess';
-    if (!is_file($htaccess)) {
-        @file_put_contents($htaccess, "# Bloquear el acceso web a las copias de seguridad\n<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Order allow,deny\n    Deny from all\n</IfModule>\nOptions -Indexes\n");
-    }
-    $index = $dir . '/index.php';
-    if (!is_file($index)) {
-        @file_put_contents($index, "<?php http_response_code(403); exit('Forbidden');\n");
-    }
-}
-
-function createBackup(string $appRoot, string $backupBase, string $adminSlug, array $sensitive, array $skipDirs, array $skipPrefixes): array {
-    if (!is_dir($backupBase)) @mkdir($backupBase, 0755, true);
-    ensureBackupGuards($backupBase);
-    $name = 'backup_' . date('Ymd_His');
-    $dir  = rtrim($backupBase, '/\\') . '/' . $name;
-    @mkdir($dir, 0755, true);
-    $remap = ($adminSlug !== 'entrada') ? [$adminSlug => 'entrada'] : [];
-    $res = copyTreeMapped($appRoot, $dir, $remap, $sensitive, $skipDirs, $skipPrefixes);
-    return ['name' => $name, 'dir' => $dir] + $res;
 }
 
 // ---------------------------------------------------------------------------
@@ -282,10 +211,10 @@ function extractZip(string $zipPath, string $dest, ?string &$err): bool {
 }
 
 // ---------------------------------------------------------------------------
-// Operaciones
+// Operación de actualización
 // ---------------------------------------------------------------------------
-function doUpdate(string $zipUrl, string $token, string $appRoot, string $adminSlug, string $versionFile, string $backupBase, string $remoteVersion, array $sensitive, array $skipDirs, array $skipPrefixes): array {
-    $backup = createBackup($appRoot, $backupBase, $adminSlug, $sensitive, $skipDirs, $skipPrefixes);
+function doUpdate(string $zipUrl, string $token, string $appRoot, string $adminSlug, string $versionFile, string $backupBase, string $remoteVersion, array $sensitive, array $skipDirs, array $skipPrefixes, array $forceDelete): array {
+    $backup = m4_create_backup($appRoot, $backupBase, $adminSlug, $sensitive, $skipDirs, $skipPrefixes);
 
     $tempZip = sys_get_temp_dir() . '/m4_update_' . time() . '.zip';
     $extractDir = sys_get_temp_dir() . '/m4_extract_' . time();
@@ -303,7 +232,7 @@ function doUpdate(string $zipUrl, string $token, string $appRoot, string $adminS
     $exErr = '';
     if (!extractZip($tempZip, $extractDir, $exErr)) {
         @unlink($tempZip);
-        rrmdir($extractDir);
+        m4_rrmdir($extractDir);
         return ['success' => false, 'error' => 'No se pudo extraer el ZIP: ' . $exErr, 'backup' => $backup];
     }
 
@@ -321,29 +250,21 @@ function doUpdate(string $zipUrl, string $token, string $appRoot, string $adminS
     $srcWeb = $sourceDir . '/public_html';
     if (!is_dir($srcWeb)) {
         @unlink($tempZip);
-        rrmdir($extractDir);
+        m4_rrmdir($extractDir);
         return ['success' => false, 'error' => 'El ZIP no contiene public_html/. Se aborta la actualización.', 'backup' => $backup];
     }
 
-    $remap = ($adminSlug !== 'entrada') ? ['entrada' => $adminSlug] : [];
-    $res = copyTreeMapped($srcWeb, $appRoot, $remap, $sensitive, $skipDirs, $skipPrefixes);
+    $res = m4_sync_from_source($srcWeb, $appRoot, $adminSlug, $remoteVersion, $sensitive, $skipDirs, $skipPrefixes, $forceDelete);
 
     @unlink($tempZip);
-    rrmdir($extractDir);
+    m4_rrmdir($extractDir);
 
-    if ($res['copied'] === 0) {
-        return ['success' => false, 'error' => 'No se copió ningún archivo. Abortado.', 'backup' => $backup, 'copied' => 0];
+    if ($res['copied'] === 0 && $res['deleted'] === 0) {
+        return ['success' => false, 'error' => 'No había nada que actualizar (¿manifiesto o release vacíos?).', 'backup' => $backup, 'copied' => 0, 'deleted' => 0];
     }
     @file_put_contents($versionFile, $remoteVersion . "\n");
 
-    return ['success' => true, 'copied' => $res['copied'], 'errors' => $res['errors'], 'backup' => $backup];
-}
-
-function doRestore(string $backupDir, string $appRoot, string $adminSlug, string $backupBase, array $sensitive, array $skipDirs, array $skipPrefixes): array {
-    $pre = createBackup($appRoot, $backupBase, $adminSlug, $sensitive, $skipDirs, $skipPrefixes);
-    $remap = ($adminSlug !== 'entrada') ? ['entrada' => $adminSlug] : [];
-    $res = copyTreeMapped($backupDir, $appRoot, $remap, $sensitive, $skipDirs, $skipPrefixes);
-    return ['pre' => $pre] + $res;
+    return ['success' => true, 'copied' => $res['copied'], 'skipped' => $res['skipped'], 'deleted' => $res['deleted'], 'errors' => $res['errors'], 'backup' => $backup];
 }
 
 // ---------------------------------------------------------------------------
@@ -408,7 +329,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$realBase || !$realDir || strpos($realDir, $realBase) !== 0 || !is_dir($realDir)) {
                     $error = 'La copia de seguridad no existe.';
                 } else {
-                    $res = doRestore($realDir, $appRoot, $adminSlug, $backupBase, $sensitive, $skipDirs, $skipPrefixes);
+                    $res = m4_restore_backup($realDir, $appRoot, $adminSlug, $backupBase, $sensitive, $skipDirs, $skipPrefixes);
                     if (function_exists('opcache_reset')) @opcache_reset();
                     logAdminEvent('system_restored', $name);
                     $_SESSION['update_flash'] = ['success', "Copia {$name} restaurada ({$res['copied']} archivos). Estado previo guardado como {$res['pre']['name']}."];
@@ -425,11 +346,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (empty($zipUrl)) {
                 $error = 'La release no contiene una URL de descarga.';
             } else {
-                $res = doUpdate($zipUrl, $githubToken, $appRoot, $adminSlug, $versionFile, $backupBase, $remoteVersion, $sensitive, $skipDirs, $skipPrefixes);
+                $res = doUpdate($zipUrl, $githubToken, $appRoot, $adminSlug, $versionFile, $backupBase, $remoteVersion, $sensitive, $skipDirs, $skipPrefixes, $forceDelete);
                 if ($res['success']) {
                     if (function_exists('opcache_reset')) @opcache_reset();
                     logAdminEvent('system_updated', 'v' . $remoteVersion);
-                    $_SESSION['update_flash'] = ['success', "Actualizado a v{$remoteVersion}. Archivos copiados: {$res['copied']}. Copia: {$res['backup']['name']}."];
+                    $_SESSION['update_flash'] = ['success', "Actualizado a v{$remoteVersion}. Copiados: {$res['copied']}, sin cambios: {$res['skipped']}, eliminados: {$res['deleted']}. Copia: {$res['backup']['name']}."];
                     header('Location: update.php');
                     exit;
                 }
