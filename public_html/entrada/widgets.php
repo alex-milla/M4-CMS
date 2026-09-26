@@ -62,11 +62,11 @@ $class = 'theme-' . htmlspecialchars($theme);
 
 createTable();
 
-// Validar datos de un bloque. Devuelve null si OK, o un mensaje de error.
+// Validar datos de un bloque. Devuelve '' si OK, o un mensaje de error.
 function validateWidgetInput($content) {
     global $err_required;
     if (trim((string)$content) === '') return $err_required;
-    return null;
+    return '';
 }
 
 $error_txt = '';
