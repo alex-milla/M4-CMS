@@ -10,6 +10,7 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 - RSS feed, XML sitemap and custom 404 page
 - SEO-friendly URLs
 - Admin panel: dashboard KPIs, post management, bulk actions, settings and logs
+- Optional **Blocks module**: link lists, sponsor text and safe media embeds on the homepage footer, disabled by default
 - One-click updates from GitHub Releases with SHA-256 manifests, automatic backups and restore
 - Multilingual UI (English / Spanish)
 - Inline SVG icons, no external icon libraries
@@ -52,8 +53,8 @@ public_html/
 ├── assets/         Frontend styles (FinSec)
 ├── db/             Database connection and data functions
 │   └── backups/    Update backups (web access denied)
-├── entrada/        Admin panel (dashboard, posts, settings, logs, updates, login)
-├── helpers/        i18n, theme, icons and content helpers
+├── entrada/        Admin panel (dashboard, posts, blocks, settings, logs, updates, login)
+├── helpers/        i18n, theme, icons, content and blocks helpers
 ├── templates/      Shared layouts
 ├── index.php       Public home
 ├── post.php        Single post

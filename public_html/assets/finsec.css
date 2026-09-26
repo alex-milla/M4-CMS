@@ -671,6 +671,54 @@ body.theme-finsec-dark .tags a:hover {
     border-color: var(--brand-900);
 }
 
+/* --- Bloques (widgets) --- */
+.site-widgets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 40px;
+}
+.widget {
+    padding: 16px;
+    background: var(--muted);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-xl);
+    font-size: 0.875rem;
+}
+.widget-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-2);
+    margin: 0 0 10px 0;
+}
+.widget-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.widget-links a {
+    color: var(--text-2);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--border-soft);
+}
+.widget-links a:hover { color: var(--brand-500); }
+.widget-text { margin: 0 0 8px 0; color: var(--text-2); }
+.widget-cta { font-weight: 600; }
+.widget-embed { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: var(--radius-md); }
+.widget-embed iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
 /* --- Footer --- */
 footer {
     text-align: center;

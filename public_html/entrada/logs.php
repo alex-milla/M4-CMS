@@ -50,6 +50,7 @@ list($btn_prev, )       = t('btn_prev');
 list($btn_next, )       = t('btn_next');
 list($nav_update, )     = t('nav_update');
 list($sys_section, )    = t('admin_system_section');
+list($nav_widgets, )   = t('nav_widgets');
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $lang; ?>" data-theme="<?php echo htmlspecialchars($theme); ?>">
@@ -81,6 +82,10 @@ list($sys_section, )    = t('admin_system_section');
             <a href="../create.php" target="_blank">
                 <?php echo finsec_icon('pen', 18); ?>
                 <span><?php echo htmlspecialchars($btn_new_post); ?></span>
+            </a>
+            <a href="widgets.php">
+                <?php echo finsec_icon('blocks', 18); ?>
+                <span><?php echo htmlspecialchars($nav_widgets); ?></span>
             </a>
 
             <div class="admin-nav-section"><?php echo htmlspecialchars($nav_settings); ?></div>

@@ -390,6 +390,7 @@ list($nav_logout, )        = t('nav_logout');
 list($nav_site, )          = t('nav_go_to_site');
 list($sys_section, )       = t('admin_system_section');
 list($_lbl_lang, )         = t('lbl_lang');
+list($nav_widgets, )   = t('nav_widgets');
 list($theme_lbl, )         = t('admin_theme_label');
 list($hint, )              = t('update_check_hint');
 list($lbl_repo, )          = t('update_repo');
@@ -439,6 +440,10 @@ list($confirm_restore, )   = t('update_confirm_restore');
             <a href="../create.php" target="_blank">
                 <?php echo finsec_icon('pen', 18); ?>
                 <span><?php echo htmlspecialchars($btn_new_post); ?></span>
+            </a>
+            <a href="widgets.php">
+                <?php echo finsec_icon('blocks', 18); ?>
+                <span><?php echo htmlspecialchars($nav_widgets); ?></span>
             </a>
 
             <div class="admin-nav-section"><?php echo htmlspecialchars($nav_settings); ?></div>

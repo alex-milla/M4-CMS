@@ -47,6 +47,7 @@ list($lbl_no_cat, )        = t('lbl_no_category');
 list($btn_publish, )       = t('btn_publish_post');
 list($post_published_msg, ) = t('post_published_msg');
 list($lbl_scheduled, )     = t('lbl_scheduled');
+list($nav_widgets, )   = t('nav_widgets');
 $lang = $_SESSION['lang'] ?? 'es';
 
 // Theme (FinSec claro/oscuro) — initTheme persiste en DB + sesión
@@ -133,6 +134,10 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
             <a href="../create.php" target="_blank">
                 <?php echo finsec_icon('pen', 18); ?>
                 <span><?php echo htmlspecialchars($btn_new_post); ?></span>
+            </a>
+            <a href="widgets.php">
+                <?php echo finsec_icon('blocks', 18); ?>
+                <span><?php echo htmlspecialchars($nav_widgets); ?></span>
             </a>
 
             <div class="admin-nav-section"><?php echo htmlspecialchars($nav_settings); ?></div>

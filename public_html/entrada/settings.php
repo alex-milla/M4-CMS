@@ -53,6 +53,7 @@ list($err_path_format, )    = t('err_admin_path_format');
 list($err_path_reserved, )  = t('err_admin_path_reserved');
 list($err_path_exists, )    = t('err_admin_path_exists');
 list($err_path_password, ) = t('err_admin_path_password');
+list($nav_widgets, )   = t('nav_widgets');
 
 $class = 'theme-' . htmlspecialchars($theme);
 
@@ -163,6 +164,10 @@ try {
             <a href="../create.php" target="_blank">
                 <?php echo finsec_icon('pen', 18); ?>
                 <span><?php echo htmlspecialchars($btn_new_post); ?></span>
+            </a>
+            <a href="widgets.php">
+                <?php echo finsec_icon('blocks', 18); ?>
+                <span><?php echo htmlspecialchars($nav_widgets); ?></span>
             </a>
 
             <div class="admin-nav-section"><?php echo htmlspecialchars($page_title); ?></div>

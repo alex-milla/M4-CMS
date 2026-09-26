@@ -7,6 +7,7 @@ include_once 'helpers/theme.php';
 include_once 'helpers/i18n.php';
 include_once 'helpers/content.php';
 include_once 'helpers/icons.php';
+include_once 'helpers/widgets.php';
 
 createTable();
 
@@ -216,6 +217,8 @@ $displayTitle = htmlspecialchars($siteTitle);
             </div>
             <?php endif; ?>
         </main>
+
+        <?php renderWidgets('footer'); ?>
 
         <footer>
             <p><?php echo htmlspecialchars($siteTitle); ?></p>

@@ -33,6 +33,7 @@ function finsec_icon($name, $size = 16, $class = '') {
         'feather'   => '<path d="M12.67 19a2 2 0 0 0 1.42-.59l4.32-4.32a2 2 0 0 0 0-2.83l-4.32-4.32a2 2 0 0 0-1.42-.59H7.5a2 2 0 0 0-2 2v13.09c0 .57.35 1.03.9 1.2a1.25 1.25 0 0 0 .96-.17l2.07-1.38a1.25 1.25 0 0 1 1.44 0l1.5 1Z"/><path d="m9 8 7 7"/><path d="m14 6 4 4"/>',
         'download'  => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
         'refresh'   => '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+        'blocks'    => '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/>',
     ];
 
     $p = $paths[$name] ?? $paths['posts'];

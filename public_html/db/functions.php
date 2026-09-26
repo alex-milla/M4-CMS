@@ -31,9 +31,22 @@ function createTable() {
         name TEXT UNIQUE NOT NULL
     )";
 
+    $sql_widgets = "CREATE TABLE IF NOT EXISTS widgets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'links',
+        content TEXT,
+        url TEXT,
+        zone TEXT NOT NULL DEFAULT 'footer',
+        position INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'published',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )";
+
     $db->exec($sql_posts);
     $db->exec($sql_settings);
     $db->exec($sql_categories);
+    $db->exec($sql_widgets);
 
     // Migrar tabla posts existente: añadir campos nuevos si no existen
     $cols = $db->query("PRAGMA table_info(posts)")->fetchAll(PDO::FETCH_ASSOC);
@@ -421,6 +434,99 @@ function getUsedCategories() {
     global $db;
     $stmt = $db->query("SELECT DISTINCT category FROM posts WHERE category IS NOT NULL AND category != '' ORDER BY category ASC");
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+// ===== BLOQUES (WIDGETS: enlaces, texto+enlace, embeds) =====
+
+// ¿Está activo el módulo de bloques? Desactivado por defecto (widgets_enabled != '1')
+function widgetsModuleEnabled() {
+    try {
+        return @getSetting('widgets_enabled') === '1';
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+// Normalizar tipo de bloque (links | text | embed)
+function normalizeWidgetType($type) {
+    $type = strtolower(trim((string)$type));
+    return in_array($type, ['links', 'text', 'embed'], true) ? $type : 'links';
+}
+
+// Normalizar estado de bloque (published | draft)
+function normalizeWidgetStatus($status) {
+    $status = strtolower(trim((string)$status));
+    return in_array($status, ['published', 'draft'], true) ? $status : 'published';
+}
+
+// Obtener todos los bloques (admin)
+function getAllWidgets() {
+    global $db;
+    $stmt = $db->query("SELECT * FROM widgets ORDER BY position ASC, id ASC");
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Obtener bloques publicados de una zona (frontend)
+function getPublishedWidgets($zone = 'footer') {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM widgets WHERE status = 'published' AND zone = ? ORDER BY position ASC, id ASC");
+    $stmt->execute([$zone]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Contar bloques (admin)
+function countWidgets() {
+    global $db;
+    return (int)$db->query("SELECT COUNT(*) FROM widgets")->fetchColumn();
+}
+
+// Obtener un bloque por ID
+function getWidgetById($id) {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM widgets WHERE id = ?");
+    $stmt->execute([(int)$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+// Crear un bloque
+function createWidget($title, $type, $content, $url, $position = 0, $status = 'published') {
+    global $db;
+    if (empty($title)) return false;
+    $stmt = $db->prepare("INSERT INTO widgets (title, type, content, url, zone, position, status) VALUES (?, ?, ?, ?, 'footer', ?, ?)");
+    return $stmt->execute([
+        trim($title),
+        normalizeWidgetType($type),
+        (string)$content,
+        trim((string)$url),
+        (int)$position,
+        normalizeWidgetStatus($status)
+    ]);
+}
+
+// Actualizar un bloque
+function updateWidget($id, $title, $type, $content, $url, $position = 0, $status = 'published') {
+    global $db;
+    $id = (int)$id;
+    if ($id <= 0 || empty($title)) return false;
+    $stmt = $db->prepare("UPDATE widgets SET title = ?, type = ?, content = ?, url = ?, position = ?, status = ? WHERE id = ?");
+    return $stmt->execute([
+        trim($title),
+        normalizeWidgetType($type),
+        (string)$content,
+        trim((string)$url),
+        (int)$position,
+        normalizeWidgetStatus($status),
+        $id
+    ]);
+}
+
+// Eliminar un bloque
+function deleteWidget($id) {
+    global $db;
+    $id = (int)$id;
+    if ($id <= 0) return false;
+    $stmt = $db->prepare("DELETE FROM widgets WHERE id = ?");
+    return $stmt->execute([$id]);
 }
 
 // ===== LOGS =====

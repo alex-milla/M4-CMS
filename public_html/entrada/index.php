@@ -71,6 +71,7 @@ list($btn_new_post, )  = t('btn_new_post');
 list($nav_logs, )      = t('nav_logs');
 list($nav_update, )    = t('nav_update');
 list($sys_section, )   = t('admin_system_section');
+list($nav_widgets, )   = t('nav_widgets');
 
 // Traducciones para dashboard
 list($dashboard_title, ) = t('admin_dashboard_title');
@@ -111,6 +112,10 @@ list($quick_actions, ) = t('admin_quick_actions');
             <a href="../create.php" target="_blank">
                 <?php echo finsec_icon('pen', 18); ?>
                 <span><?php echo htmlspecialchars($btn_new_post); ?></span>
+            </a>
+            <a href="widgets.php">
+                <?php echo finsec_icon('blocks', 18); ?>
+                <span><?php echo htmlspecialchars($nav_widgets); ?></span>
             </a>
 
             <div class="admin-nav-section"><?php echo htmlspecialchars($settings); ?></div>
