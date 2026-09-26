@@ -40,6 +40,8 @@ The root `.htaccess` blocks direct web access to sensitive files:
 
 `db/backups/` ships with its own deny rules. If you use Nginx instead of Apache, replicate these rules in the server config.
 
+Blocked resources keep the HTTP **403** status but are rendered with the site's own error page (`404.php`, which handles both 403 and 404), instead of the server's default page.
+
 ## Project structure
 
 ```

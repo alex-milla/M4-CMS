@@ -36,6 +36,9 @@ RewriteEngine On
 # Página genérica para URLs inexistentes
 ErrorDocument 404 /404.php
 
+# Página propia para accesos denegados (mantiene el estado HTTP 403)
+ErrorDocument 403 /404.php
+
 # Redireccion 301: /post/mi-slug -> /mi-slug (para compatibilidad con URLs antiguas)
 RewriteRule ^post/([a-z0-9\-]+)/?$ /$1 [R=301,L]
 
