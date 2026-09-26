@@ -1,0 +1,22 @@
+RewriteEngine On
+
+# Página genérica para URLs inexistentes
+ErrorDocument 404 /404.php
+
+# Redireccion 301: /post/mi-slug -> /mi-slug (para compatibilidad con URLs antiguas)
+RewriteRule ^post/([a-z0-9\-]+)/?$ /$1 [R=301,L]
+
+# Pagina principal: /page/2 -> index.php?page=2
+RewriteRule ^page/([0-9]+)/?$ index.php?page=$1 [L,QSA]
+
+# RSS feed
+RewriteRule ^feed/?$ rss.php [L]
+
+# Sitemap
+RewriteRule ^sitemap\.xml/?$ sitemap.php [L]
+
+# Entrada en la raiz (estilo WordPress "Nombre de la entrada"): /mi-slug -> post.php?slug=mi-slug
+# Debe ser la ultima regla: solo aplica si no es un archivo o carpeta real
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-z0-9\-]+)/?$ post.php?slug=$1 [L,QSA]

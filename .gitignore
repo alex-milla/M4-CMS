@@ -1,0 +1,44 @@
+# Base de datos SQLite — nunca publicar datos reales
+public_html/db/cms.db
+public_html/db/*.db
+*.db
+*.db.bak
+
+# Credenciales y secretos
+public_html/.env
+public_html/admin_config.php
+.env
+env/
+*.pem
+*.key
+
+# Scripts de un solo uso
+public_html/cleanup.php
+public_html/install.php
+
+# Backups y snapshots locales
+backup_snapshot_*/
+*.bak
+
+# Tools y cachés locales
+.aider.tags.cache.v4/
+hash/
+temp/
+.idea/
+.vscode/
+*.log
+
+# Scripts y volcados de desarrollo
+upload_ftp.ps1
+sync_dates.ps1
+tempfix.js
+unicode-fix.js
+code_*.txt
+*.html
+feed.xml
+sitemap.xml
+retro.css
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
