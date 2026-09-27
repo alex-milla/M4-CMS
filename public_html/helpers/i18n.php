@@ -282,6 +282,14 @@ function t($key) {
         'lbl_admin_current_password' => ['en' => 'Current password (required to change user or password)', 'es' => 'Contraseña actual (obligatoria para cambiar usuario o contraseña)'],
         'err_login_rate_limited' => ['en' => 'Too many failed attempts. Please try again later.', 'es' => 'Demasiados intentos fallidos. Inténtalo de nuevo más tarde.'],
         'err_generic' => ['en' => 'An error occurred. Please try again.', 'es' => 'Se produjo un error. Inténtalo de nuevo.'],
+
+        // --- Sistema (dashboard) ---
+        'sys_db_size' => ['en' => 'Database size', 'es' => 'Ocupación BBDD'],
+        'sys_disk' => ['en' => 'Disk', 'es' => 'Disco'],
+        'sys_disk_free_of' => ['en' => 'free of', 'es' => 'libre de'],
+        'sys_disk_used' => ['en' => 'used', 'es' => 'usado'],
+        'sys_backups' => ['en' => 'Backups', 'es' => 'Respaldos'],
+        'sys_unavailable' => ['en' => 'Not available', 'es' => 'No disponible'],
         ];
     }
 

@@ -37,6 +37,7 @@ $stats = [
     'draft' => 0,
     'scheduled' => 0
 ];
+$sys = null;
 if ($loggedIn) {
     try {
         include_once '../db/functions.php';
@@ -54,6 +55,14 @@ if ($loggedIn) {
         }
     } catch (\Throwable $e) {
         // Fallback: sin estadisticas
+    }
+
+    // Métricas de sistema (BBDD, respaldos, disco)
+    try {
+        include_once '../helpers/system.php';
+        $sys = getSystemMetrics();
+    } catch (\Throwable $e) {
+        $sys = null;
     }
 }
 
@@ -123,6 +132,34 @@ list($quick_actions, ) = t('admin_quick_actions');
                     <div class="label"><?php echo htmlspecialchars($stats_scheduled ?? 'Programados'); ?></div>
                 </div>
             </div>
+
+            <?php if ($sys !== null): ?>
+            <!-- Sistema: BBDD, disco y respaldos -->
+            <div class="admin-card">
+                <h3><?php echo finsec_icon('shield', 16); ?> <?php echo htmlspecialchars(t('lbl_system_info')[0]); ?></h3>
+                <div class="sys-metrics">
+                    <div class="sys-row">
+                        <span class="sys-label"><?php echo htmlspecialchars(t('sys_db_size')[0]); ?></span>
+                        <span class="sys-value"><?php echo htmlspecialchars(formatBytes($sys['db_size'])); ?></span>
+                    </div>
+                    <div class="sys-row">
+                        <span class="sys-label"><?php echo htmlspecialchars(t('sys_disk')[0]); ?></span>
+                        <span class="sys-value">
+                            <?php if ($sys['disk_available']): ?>
+                                <?php echo htmlspecialchars(formatBytes($sys['disk_free']) . ' ' . t('sys_disk_free_of')[0] . ' ' . formatBytes($sys['disk_total'])); ?>
+                                (<?php echo (int)round($sys['disk_used_pct']); ?>% <?php echo htmlspecialchars(t('sys_disk_used')[0]); ?>)
+                            <?php else: ?>
+                                <?php echo htmlspecialchars(t('sys_unavailable')[0]); ?>
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                    <div class="sys-row">
+                        <span class="sys-label"><?php echo htmlspecialchars(t('sys_backups')[0]); ?></span>
+                        <span class="sys-value"><?php echo htmlspecialchars(formatBytes($sys['backups_size'])); ?></span>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Quick Actions (tarjetas clicables) -->
             <h3 style="font-size:1rem;font-weight:600;margin-bottom:16px;"><?php echo htmlspecialchars($quick_actions ?? 'Acciones rápidas'); ?></h3>
