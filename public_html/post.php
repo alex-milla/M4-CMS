@@ -85,7 +85,8 @@ if (!$post) {
 if (isset($_SESSION['theme'])) {
     $theme = normalizeTheme($_SESSION['theme']);
 } else {
-    $theme = getSiteTheme();
+    // Respeta la cookie del visitante; por defecto claro si no está logado
+    $theme = resolveTheme($isAdmin);
 }
 $class = themeClass($theme);
 $lang = $_SESSION['lang'] ?? 'es';

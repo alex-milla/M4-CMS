@@ -25,6 +25,7 @@ list($tbl_col_actions, )   = t('tbl_col_actions');
 list($tbl_col_id, )        = t('tbl_col_id');
 list($tbl_col_select, )    = t('tbl_col_select');
 list($btn_edit, )          = t('btn_edit');
+list($btn_view, )          = t('btn_view');
 list($btn_delete, )        = t('btn_delete');
 list($no_posts_msg, )      = t('no_posts_msg');
 list($confirm_delete, )    = t('confirm_delete_post');
@@ -270,6 +271,7 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
                                         <button type="submit" class="action-btn"><?php echo finsec_icon('eye', 14); ?> <?php echo htmlspecialchars($btn_publish); ?></button>
                                     </form>
                                     <?php endif; ?>
+                                    <a href="<?php echo htmlspecialchars(postUrl($post['slug'] ?? $post['id'])); ?>" target="_blank" rel="noopener noreferrer" class="action-btn" title="<?php echo htmlspecialchars($btn_view); ?>"><?php echo finsec_icon('external-link', 14); ?> <?php echo htmlspecialchars($btn_view); ?></a>
                                     <a href="../edit.php?id=<?php echo $post['id']; ?>" class="action-btn"><?php echo finsec_icon('pencil', 14); ?> <?php echo htmlspecialchars($btn_edit); ?></a>
                                     <form method="POST" action="" style="display:inline;" onsubmit="return confirm('<?php echo htmlspecialchars($confirm_delete, ENT_QUOTES); ?>');">
                                         <?php echo csrfField(); ?>

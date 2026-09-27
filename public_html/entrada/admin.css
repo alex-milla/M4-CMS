@@ -141,6 +141,18 @@ h1, h2, h3, h4 { letter-spacing: -0.01em; }
     flex-shrink: 0;
 }
 
+.admin-sidebar a.logo { text-decoration: none; }
+.admin-sidebar a.logo:hover { color: var(--brand-500); }
+
+/* Título de la sección, dentro del contenido y alineado a la derecha */
+.admin-page-title {
+    text-align: right;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-1);
+    margin: 0 0 20px;
+}
+
 .admin-sidebar nav {
     flex: 1;
     padding: 16px;

@@ -44,22 +44,30 @@ $totalPages = max(1, (int)ceil($totalPosts / $perPage));
 // Categorias para el filtro
 $categories = getUsedCategories();
 
-// Theme: FinSec claro/oscuro — el admin persiste en DB; un visitante solo en sesión
+// ¿Sesión de admin? (se resuelve antes para elegir el tema)
+$isLogged = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'];
+
+// Theme: el admin persiste en DB; el visitante guarda su preferencia en cookie + sesión
 if (isset($_POST['site_theme']) && !empty($_POST['site_theme'])) {
     $theme = normalizeTheme($_POST['site_theme']);
-    if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']) {
-        saveSetting('site_theme', $theme);
-    }
     $_SESSION['theme'] = $theme;
-} elseif (isset($_SESSION['theme'])) {
-    $theme = normalizeTheme($_SESSION['theme']);
+    if ($isLogged) {
+        saveSetting('site_theme', $theme);
+    } else {
+        setcookie('m4_theme', $theme, [
+            'expires' => time() + 60 * 60 * 24 * 365,
+            'path' => '/',
+            'secure' => m4_is_https(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
 } else {
-    $theme = getSiteTheme();
+    $theme = resolveTheme($isLogged);
 }
 $themeToggle = ($theme === 'finsec-dark') ? 'finsec' : 'finsec-dark';
 
 $class = themeClass($theme);
-$isLogged = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'];
 $lang = $_SESSION['lang'] ?? 'es';
 list($_msg_admin_panel, )      = t('nav_admin_panel');
 list($_msg_posts, )            = t('nav_posts');
@@ -98,7 +106,7 @@ list($_pinned_badge, )    = t('pinned_badge');
             <a href="<?php echo htmlspecialchars(adminUrl()); ?>" class="admin-bar__brand"><?php echo finsec_icon('feather', 16); ?> <?php echo $_msg_admin_panel; ?></a>
             <span class="admin-bar__sep"></span>
             <a href="<?php echo htmlspecialchars(adminUrl('posts.php')); ?>" class="admin-bar__link"><?php echo finsec_icon('posts', 14); ?> <span class="bar-label"><?php echo $_msg_posts; ?></span></a>
-            <a href="create.php" class="admin-bar__link admin-bar__link--primary"><?php echo finsec_icon('plus', 14); ?> <span class="bar-label"><?php echo $_btn_new_post; ?></span></a>
+            <a href="<?php echo htmlspecialchars(adminUrl('new-post.php')); ?>" class="admin-bar__link admin-bar__link--primary"><?php echo finsec_icon('plus', 14); ?> <span class="bar-label"><?php echo $_btn_new_post; ?></span></a>
             <a href="<?php echo htmlspecialchars(adminUrl('settings.php')); ?>" class="admin-bar__link"><?php echo finsec_icon('settings', 14); ?> <span class="bar-label"><?php echo $_msg_settings; ?></span></a>
             <a href="<?php echo htmlspecialchars(adminUrl('logs.php')); ?>" class="admin-bar__link"><?php echo finsec_icon('history', 14); ?> <span class="bar-label"><?php echo $_msg_logs; ?></span></a>
             <span class="admin-bar__sep"></span>
@@ -127,14 +135,12 @@ list($_pinned_badge, )    = t('pinned_badge');
             </div>
             <div class="header-actions">
                 <button type="button" class="icon-btn" onclick="var b=document.getElementById('search-box'); b.classList.toggle('open'); if(b.classList.contains('open'))b.querySelector('input').focus();" aria-label="<?php echo htmlspecialchars($_lbl_search); ?>"><?php echo finsec_icon('search', 18); ?></button>
-                <?php if ($isLogged): ?>
                 <form method="POST" action="" style="display:inline;">
                     <input type="hidden" name="site_theme" value="<?php echo $themeToggle; ?>">
                     <button type="submit" class="icon-btn" aria-label="<?php echo htmlspecialchars($_theme_lbl); ?>" title="<?php echo htmlspecialchars($_theme_lbl); ?>">
                         <?php echo finsec_icon($theme === 'finsec-dark' ? 'sun' : 'moon', 18); ?>
                     </button>
                 </form>
-                <?php endif; ?>
             </div>
             <form method="GET" action="" id="search-box" class="search-box<?php echo (!empty($searchQuery) || !empty($categoryFilter)) ? ' open' : ''; ?>">
                 <input type="text" name="q" value="<?php echo htmlspecialchars($searchQuery); ?>" placeholder="<?php echo htmlspecialchars($_ph_search); ?>">

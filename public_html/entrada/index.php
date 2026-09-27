@@ -131,7 +131,7 @@ list($quick_actions, ) = t('admin_quick_actions');
                     <span class="icon"><?php echo finsec_icon('posts', 18); ?></span>
                     <span><?php echo htmlspecialchars($manage_posts); ?></span>
                 </a>
-                <a href="../create.php" target="_blank" class="admin-quick-action">
+                <a href="new-post.php" class="admin-quick-action">
                     <span class="icon"><?php echo finsec_icon('pen', 18); ?></span>
                     <span><?php echo htmlspecialchars($btn_new_post); ?></span>
                 </a>

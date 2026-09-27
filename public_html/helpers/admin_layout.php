@@ -14,6 +14,8 @@ function adminLayoutHead(array $opts = []) {
     $title        = (string)($opts['title'] ?? '');
     $h1           = (string)($opts['h1'] ?? $title);
     $logo         = (string)($opts['logo'] ?? $title);
+    $blogName     = function_exists('getSetting') ? (string)(getSetting('site_title') ?? '') : '';
+    if ($blogName === '') $blogName = t('page_m4_cms_header');
     $active       = (string)($opts['active'] ?? '');
     $theme        = (string)($opts['theme'] ?? 'finsec');
     $themeToggle  = ($theme === 'finsec-dark') ? 'finsec' : 'finsec-dark';
@@ -51,10 +53,10 @@ function adminLayoutHead(array $opts = []) {
 <body class="theme-<?php echo htmlspecialchars($theme); ?>">
     <!-- Sidebar -->
     <aside class="admin-sidebar">
-        <div class="logo">
+        <a class="logo" href="../index.php" title="<?php echo htmlspecialchars($nav_site); ?>">
             <span class="logo-mark"><?php echo finsec_icon('feather', 18); ?></span>
-            <span><?php echo htmlspecialchars($logo); ?></span>
-        </div>
+            <span><?php echo htmlspecialchars($blogName); ?></span>
+        </a>
         <nav>
             <div class="admin-nav-section"><?php echo htmlspecialchars($nav_dashboard); ?></div>
             <a href="index.php"<?php echo $act('index'); ?>>
@@ -67,7 +69,7 @@ function adminLayoutHead(array $opts = []) {
                 <?php echo finsec_icon('posts', 18); ?>
                 <span><?php echo htmlspecialchars($manage_posts); ?></span>
             </a>
-            <a href="../create.php" target="_blank">
+            <a href="new-post.php"<?php echo $act('new'); ?>>
                 <?php echo finsec_icon('pen', 18); ?>
                 <span><?php echo htmlspecialchars($btn_new_post); ?></span>
             </a>
@@ -107,7 +109,6 @@ function adminLayoutHead(array $opts = []) {
     <header class="admin-header">
         <div class="admin-header-left">
             <button class="admin-menu-toggle" onclick="toggleSidebar()" aria-label="Menu"><?php echo finsec_icon('menu', 20); ?></button>
-            <h1><?php echo htmlspecialchars($h1); ?></h1>
         </div>
         <div class="admin-header-right">
             <?php if ($showSiteLink): ?>
@@ -139,6 +140,9 @@ function adminLayoutHead(array $opts = []) {
     <!-- Main -->
     <main class="admin-main">
         <div class="admin-container">
+            <?php if ($h1 !== ''): ?>
+            <h1 class="admin-page-title"><?php echo htmlspecialchars($h1); ?></h1>
+            <?php endif; ?>
     <?php
 }
 

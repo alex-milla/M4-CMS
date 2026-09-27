@@ -156,7 +156,6 @@ $widget_count = countWidgets();
     'theme'  => $theme,
 ]); ?>
             <div class="admin-content-header">
-                <h2><?php echo htmlspecialchars($page_title); ?></h2>
                 <p class="settings-stat"><?php echo finsec_icon('blocks', 14); ?> <?php echo htmlspecialchars($wdg_module); ?>: <strong><?php echo $widget_count; ?></strong></p>
             </div>
 

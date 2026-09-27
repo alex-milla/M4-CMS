@@ -168,7 +168,6 @@ try {
     'theme'  => $theme,
 ]); ?>
             <div class="admin-content-header">
-                <h2><?php echo htmlspecialchars($page_title); ?></h2>
                 <p class="settings-stat"><?php echo finsec_icon('posts', 14); ?> <?php echo htmlspecialchars($lbl_posts); ?> <strong><?php echo (int)$posts_count; ?></strong></p>
             </div>
 

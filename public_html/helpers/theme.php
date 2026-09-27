@@ -39,6 +39,22 @@ function initTheme() {
     return getSiteTheme();
 }
 
+// Resuelve el tema para el frontend público. Prioridad:
+//   1) preferencia en sesión; 2) cookie del visitante (no logado);
+//   3) tema global del sitio (solo admin); 4) claro por defecto.
+function resolveTheme($isLogged = false) {
+    if (isset($_SESSION['theme'])) {
+        return normalizeTheme($_SESSION['theme']);
+    }
+    if (!$isLogged && isset($_COOKIE['m4_theme'])) {
+        return normalizeTheme($_COOKIE['m4_theme']);
+    }
+    if ($isLogged) {
+        return getSiteTheme();
+    }
+    return 'finsec';
+}
+
 function themeClass($theme) {
     return "theme-" . htmlspecialchars($theme);
 }

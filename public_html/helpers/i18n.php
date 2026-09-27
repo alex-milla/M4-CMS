@@ -71,6 +71,7 @@ function t($key) {
         'tbl_col_date' => ['en' => 'Date', 'es' => 'Fecha'],
         'tbl_col_actions' => ['en' => 'Actions', 'es' => 'Acciones'],
         'btn_edit' => ['en' => 'Edit', 'es' => 'Editar'],
+        'btn_view' => ['en' => 'View', 'es' => 'Ver'],
         'btn_delete' => ['en' => 'Delete', 'es' => 'Eliminar'],
         'no_posts_msg' => ['en' => 'No publications found.', 'es' => 'No se encontraron publicaciones.'],
         'btn_select_all' => ['en' => 'Select All', 'es' => 'Seleccionar Todo'],
