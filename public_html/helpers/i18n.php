@@ -18,12 +18,12 @@ if (session_status() === PHP_SESSION_ACTIVE) {
         }
     } elseif (!isset($_SESSION['lang'])) {
         // Sin sesion: leer idioma de la DB, default 'es'
+        // (tolerante a DB sin tablas todavía, p. ej. instalación recién creada)
+        $dbLang = null;
         if (function_exists('getSetting')) {
-            $dbLang = @getSetting('site_lang');
-            $_SESSION['lang'] = in_array($dbLang, ['en', 'es']) ? $dbLang : 'es';
-        } else {
-            $_SESSION['lang'] = 'es';
+            try { $dbLang = getSetting('site_lang'); } catch (\Throwable $e) { $dbLang = null; }
         }
+        $_SESSION['lang'] = in_array($dbLang, ['en', 'es'], true) ? $dbLang : 'es';
     }
 }
 
@@ -280,6 +280,7 @@ function t($key) {
         'err_creds_password' => ['en' => 'Current password is incorrect. Account changes were not saved.', 'es' => 'La contraseña actual es incorrecta. No se guardaron los cambios de cuenta.'],
         'lbl_admin_current_password' => ['en' => 'Current password (required to change user or password)', 'es' => 'Contraseña actual (obligatoria para cambiar usuario o contraseña)'],
         'err_login_rate_limited' => ['en' => 'Too many failed attempts. Please try again later.', 'es' => 'Demasiados intentos fallidos. Inténtalo de nuevo más tarde.'],
+        'err_generic' => ['en' => 'An error occurred. Please try again.', 'es' => 'Se produjo un error. Inténtalo de nuevo.'],
         ];
     }
 

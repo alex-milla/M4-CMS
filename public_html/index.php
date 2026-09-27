@@ -44,10 +44,12 @@ $totalPages = max(1, (int)ceil($totalPosts / $perPage));
 // Categorias para el filtro
 $categories = getUsedCategories();
 
-// Theme: FinSec claro/oscuro — POST guarda en DB + sesion; sino lee sesion o DB
+// Theme: FinSec claro/oscuro — el admin persiste en DB; un visitante solo en sesión
 if (isset($_POST['site_theme']) && !empty($_POST['site_theme'])) {
     $theme = normalizeTheme($_POST['site_theme']);
-    saveSetting('site_theme', $theme);
+    if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']) {
+        saveSetting('site_theme', $theme);
+    }
     $_SESSION['theme'] = $theme;
 } elseif (isset($_SESSION['theme'])) {
     $theme = normalizeTheme($_SESSION['theme']);
@@ -78,8 +80,6 @@ list($_read_more, )       = t('lbl_back_to_list');
 list($_lbl_lang, )        = t('lbl_lang');
 list($_lbl_pinned, )      = t('lbl_pinned');
 list($_pinned_badge, )    = t('pinned_badge');
-// Use site title from DB regardless of i18n key since it's a dynamic value
-$displayTitle = htmlspecialchars($siteTitle);
 ?>
 
 <!DOCTYPE html>

@@ -107,7 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 logAdminEvent('settings_saved', $_SESSION['admin_user'] ?? 'unknown');
             }
         } catch (Exception $e) {
-            $error_txt = $e->getMessage();
+            error_log('settings save failed: ' . $e->getMessage());
+            $error_txt = t('err_generic')[0];
         }
 
         // --- Cambio de ruta del panel admin (rename físico de carpeta) ---

@@ -10,7 +10,9 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 - RSS feed, XML sitemap and custom 404 page
 - SEO-friendly URLs
 - Admin panel: dashboard KPIs, post management, bulk actions, settings and logs
+- **Pinned posts**: pin up to 3 posts to the top of the homepage, with a custom order you can reorder from the admin list
 - Optional **Blocks module**: free-form content at the top of the homepage, above the post list (plain text with auto-linked URLs, sanitized basic HTML, or an auto-detected media embed), disabled by default
+- Hardened admin: CSRF token on every write, secure session cookies (`HttpOnly`/`SameSite`), login rate limiting, and security headers (CSP, `X-Frame-Options`, …)
 - One-click updates from GitHub Releases with SHA-256 manifests, automatic backups and restore
 - Multilingual UI (English / Spanish)
 - Inline SVG icons, no external icon libraries
@@ -54,8 +56,7 @@ public_html/
 ├── db/             Database connection and data functions
 │   └── backups/    Update backups (web access denied)
 ├── entrada/        Admin panel (dashboard, posts, blocks, settings, logs, updates, login)
-├── helpers/        i18n, theme, icons, content and blocks helpers
-├── templates/      Shared layouts
+├── helpers/        i18n, theme, icons, content, session, auth, CSRF and blocks helpers
 ├── index.php       Public home
 ├── post.php        Single post
 ├── create.php      Create post
@@ -85,6 +86,19 @@ The admin panel includes an updater (`entrada/update.php`, under **System → Up
 - If the admin folder has been renamed, the updater remaps the package's `entrada/` folder to the current admin path automatically.
 - The repository is public, so no token is required. To raise the GitHub API rate limit, set a `GITHUB_TOKEN` environment variable.
 - The updater needs a ZIP extractor: the `zip` extension (`ZipArchive`), `PharData`, or the `unzip` binary.
+
+## Tests
+
+There are no runtime dependencies. CI (`.github/workflows/ci.yml`) runs `php -l`
+on every PHP file and a smoke test that exercises the data layer on a temporary
+SQLite database:
+
+```bash
+php tests/smoke.php
+```
+
+`tests/` and `.github/` live outside `public_html/`, so they are neither part of
+the web root nor synced by the updater.
 
 ## License
 

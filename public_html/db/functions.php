@@ -85,13 +85,17 @@ function createTable() {
     }
 }
 
-// Obtener el valor de un setting
+// Obtener el valor de un setting (null si no existe o si la DB aún no está lista)
 function getSetting($key) {
     global $db;
-    $stmt = $db->prepare("SELECT value FROM settings WHERE key_name = ?");
-    $stmt->execute([$key]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result ? $result['value'] : null;
+    try {
+        $stmt = $db->prepare("SELECT value FROM settings WHERE key_name = ?");
+        $stmt->execute([$key]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? $result['value'] : null;
+    } catch (\Throwable $e) {
+        return null;
+    }
 }
 
 // Guardar un setting

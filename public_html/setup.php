@@ -1,7 +1,7 @@
 <?php
 // Script de setup inicial del CMS
 require_once 'config.php';
-require_once 'db/connect.php';
+require_once 'db/functions.php';
 
 // Verificar si ya está configurado: no permitir reinstalación si existe
 // la marca de setup o credenciales previas (.env / admin_config.php).
@@ -23,18 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($admin_user) || empty($admin_pass)) {
         $error = 'Todos los campos son obligatorios';
     } else {
-        // Crear la tabla de publicaciones si no existe
+        // Crear el esquema completo (posts, settings, categories, widgets) + migraciones
         try {
-            $sql = "CREATE TABLE IF NOT EXISTS posts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                content TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )";
-            
-            $db->exec($sql);
-            
+            createTable();
+
             // Guardar configuración de administrador (hash REAL bcrypt) en .env y admin_config.php
             $admin_hash = password_hash($admin_pass, PASSWORD_DEFAULT);
             

@@ -14,12 +14,16 @@ function normalizeTheme($theme) {
 }
 
 function initTheme() {
-    // 1. POST/GET — override más reciente, guardar en DB y session
+    // 1. POST/GET — override más reciente. Solo un admin persiste el tema global;
+    //    un visitante anónimo solo cambia su preferencia de sesión.
+    $isAdmin = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'];
     foreach ([$_POST, $_GET] as $input) {
         if (isset($input['site_theme']) || isset($input['theme_setting'])) {
             $value = $input['site_theme'] ?? $input['theme_setting'];
             if (in_array($value, finsecThemes(), true)) {
-                saveSetting('site_theme', $value);
+                if ($isAdmin) {
+                    saveSetting('site_theme', $value);
+                }
                 $_SESSION['theme'] = $value;
                 return $value;
             }
