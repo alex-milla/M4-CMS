@@ -12,6 +12,7 @@ include_once __DIR__ . '/csrf.php';
 //           logout_url, logout_confirm.
 function adminLayoutHead(array $opts = []) {
     $title        = (string)($opts['title'] ?? '');
+    $h1           = (string)($opts['h1'] ?? $title);
     $logo         = (string)($opts['logo'] ?? $title);
     $active       = (string)($opts['active'] ?? '');
     $theme        = (string)($opts['theme'] ?? 'finsec');
@@ -106,7 +107,7 @@ function adminLayoutHead(array $opts = []) {
     <header class="admin-header">
         <div class="admin-header-left">
             <button class="admin-menu-toggle" onclick="toggleSidebar()" aria-label="Menu"><?php echo finsec_icon('menu', 20); ?></button>
-            <h1><?php echo htmlspecialchars($title); ?></h1>
+            <h1><?php echo htmlspecialchars($h1); ?></h1>
         </div>
         <div class="admin-header-right">
             <?php if ($showSiteLink): ?>

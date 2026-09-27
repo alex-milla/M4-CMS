@@ -15,6 +15,7 @@ if (isset($_GET['logout'])) {
 include_once '../helpers/i18n.php';
 include_once '../helpers/theme.php';
 include_once '../helpers/icons.php';
+include_once __DIR__ . '/../helpers/admin_layout.php';
 $lang = $_SESSION['lang'] ?? 'es';
 
 // Theme (FinSec claro/oscuro) — initTheme persiste en DB + sesión
@@ -82,100 +83,18 @@ list($stats_draft, ) = t('admin_stats_draft');
 list($stats_scheduled, ) = t('admin_stats_scheduled');
 list($quick_actions, ) = t('admin_quick_actions');
 ?>
-<!DOCTYPE html>
-<html lang="<?php echo $lang; ?>" data-theme="<?php echo htmlspecialchars($theme); ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($page_title); ?></title>
-    <link rel="stylesheet" href="admin.css">
-</head>
-<body class="<?php echo $class; ?>">
     <?php if ($loggedIn): ?>
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-        <div class="logo">
-            <span class="logo-mark"><?php echo finsec_icon('feather', 18); ?></span>
-            <span><?php echo htmlspecialchars($admin_h1); ?></span>
-        </div>
-        <nav>
-            <div class="admin-nav-section"><?php echo htmlspecialchars($dashboard_title ?? $admin_h1); ?></div>
-            <a href="index.php" class="active">
-                <?php echo finsec_icon('layout', 18); ?>
-                <span><?php echo htmlspecialchars($dashboard_title ?? $admin_h1); ?></span>
-            </a>
-
-            <div class="admin-nav-section"><?php echo htmlspecialchars($manage_posts); ?></div>
-            <a href="posts.php">
-                <?php echo finsec_icon('posts', 18); ?>
-                <span><?php echo htmlspecialchars($manage_posts); ?></span>
-            </a>
-            <a href="../create.php" target="_blank">
-                <?php echo finsec_icon('pen', 18); ?>
-                <span><?php echo htmlspecialchars($btn_new_post); ?></span>
-            </a>
-            <a href="widgets.php">
-                <?php echo finsec_icon('blocks', 18); ?>
-                <span><?php echo htmlspecialchars($nav_widgets); ?></span>
-            </a>
-
-            <div class="admin-nav-section"><?php echo htmlspecialchars($settings); ?></div>
-            <a href="settings.php">
-                <?php echo finsec_icon('settings', 18); ?>
-                <span><?php echo htmlspecialchars($settings); ?></span>
-            </a>
-            <a href="logs.php">
-                <?php echo finsec_icon('history', 18); ?>
-                <span><?php echo htmlspecialchars($nav_logs); ?></span>
-            </a>
-
-            <div class="admin-nav-section"><?php echo htmlspecialchars($sys_section); ?></div>
-            <a href="update.php">
-                <?php echo finsec_icon('download', 18); ?>
-                <span><?php echo htmlspecialchars($nav_update); ?></span>
-            </a>
-
-            <div class="admin-nav-section">&nbsp;</div>
-            <a href="./?logout=1" class="nav-danger" onclick="return confirm('<?php echo htmlspecialchars($logout); ?>?');">
-                <?php echo finsec_icon('logout', 18); ?>
-                <span><?php echo htmlspecialchars($logout); ?></span>
-            </a>
-        </nav>
-    </aside>
-
-    <!-- Overlay para mobile -->
-    <div class="admin-sidebar-overlay"></div>
-
-    <!-- Header -->
-    <header class="admin-header">
-        <div class="admin-header-left">
-            <button class="admin-menu-toggle" onclick="toggleSidebar()" aria-label="Menu"><?php echo finsec_icon('menu', 20); ?></button>
-            <h1><?php echo htmlspecialchars($admin_h1); ?></h1>
-        </div>
-        <div class="admin-header-right">
-            <form method="GET" action="" style="display:inline;">
-                <select name="lang" onchange="this.form.submit();" class="lang-selector" aria-label="<?php echo htmlspecialchars($_lbl_lang); ?>">
-                    <option value="es"<?php echo $lang === 'es' ? ' selected' : ''; ?>>Español</option>
-                    <option value="en"<?php echo $lang === 'en' ? ' selected' : ''; ?>>English</option>
-                </select>
-            </form>
-            <form method="POST" action="" style="display:inline;">
-                <input type="hidden" name="site_theme" value="<?php echo $themeToggle; ?>">
-                <input type="hidden" name="theme_setting" value="<?php echo $themeToggle; ?>">
-                <button type="submit" class="icon-btn" aria-label="<?php echo htmlspecialchars($theme_lbl); ?>" title="<?php echo htmlspecialchars($theme_lbl); ?>">
-                    <?php echo finsec_icon($theme === 'finsec-dark' ? 'sun' : 'moon', 18); ?>
-                </button>
-            </form>
-            <span class="user-chip">
-                <span class="user-name"><?php echo htmlspecialchars($userName); ?></span>
-                <span class="role-chip">admin</span>
-            </span>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="admin-main">
-        <div class="admin-container">
+<?php adminLayoutHead([
+    'title'  => $page_title,
+    'h1'     => $admin_h1,
+    'logo'   => $admin_h1,
+    'active' => 'index',
+    'theme'  => $theme,
+    'user'   => $userName,
+    'show_site_link' => false,
+    'logout_url' => './?logout=1',
+    'logout_confirm' => true,
+]); ?>
             <div class="admin-content-header">
                 <h2><?php echo htmlspecialchars($welcome); ?>, <?php echo htmlspecialchars($userName); ?></h2>
                 <p><?php echo htmlspecialchars($status); ?></p>
@@ -229,25 +148,8 @@ list($quick_actions, ) = t('admin_quick_actions');
                     <span><?php echo htmlspecialchars($nav_update); ?></span>
                 </a>
             </div>
-        </div>
-    </main>
-
-    <script>
-    // Toggle sidebar para mobile
-    function toggleSidebar() {
-        const sidebar = document.querySelector('.admin-sidebar');
-        const overlay = document.querySelector('.admin-sidebar-overlay');
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('active');
-    }
-
-    // Cerrar sidebar al hacer clic en overlay
-    document.querySelector('.admin-sidebar-overlay')?.addEventListener('click', function() {
-        document.querySelector('.admin-sidebar')?.classList.remove('open');
-        this.classList.remove('active');
-    });
-
-    // Cerrar sidebar al cambiar de pagina
+<?php
+$dashboardJs = <<<'JS'
     document.addEventListener('DOMContentLoaded', function() {
         const sidebar = document.querySelector('.admin-sidebar');
         const overlay = document.querySelector('.admin-sidebar-overlay');
@@ -256,8 +158,19 @@ list($quick_actions, ) = t('admin_quick_actions');
             overlay?.classList.remove('active');
         }
     });
-    </script>
+JS;
+adminLayoutFooter($dashboardJs);
+?>
     <?php else: ?>
+<!DOCTYPE html>
+<html lang="<?php echo $lang; ?>" data-theme="<?php echo htmlspecialchars($theme); ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($page_title); ?></title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body class="<?php echo $class; ?>">
     <!-- No logueado: tarjeta con acceso al login -->
     <div class="login-shell">
         <div class="login-col">
@@ -275,6 +188,6 @@ list($quick_actions, ) = t('admin_quick_actions');
             </div>
         </div>
     </div>
-    <?php endif; ?>
 </body>
 </html>
+<?php endif; ?>
