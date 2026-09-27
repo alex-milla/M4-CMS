@@ -224,6 +224,21 @@ main h2 {
     border-radius: var(--radius-xl);
 }
 
+/* --- Posts anclados (destacados en la portada) --- */
+.post.pinned, article.post.pinned {
+    border-left: 3px solid var(--brand-500);
+}
+.pinned-posts { margin-bottom: 24px; }
+.pinned-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--brand-500);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.875rem;
+}
+
 .post h2, .post h3 {
     color: var(--text-1);
     margin-bottom: 8px;
@@ -339,6 +354,20 @@ main h2 {
 body.theme-finsec-dark .badge.published { background: rgba(22, 163, 74, 0.2); color: #4ade80; }
 body.theme-finsec-dark .badge.draft     { background: rgba(217, 119, 6, 0.2); color: #fbbf24; }
 body.theme-finsec-dark .badge.scheduled { background: rgba(37, 99, 235, 0.2); color: #60a5fa; }
+
+.pin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 4px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background: #ede9fe;
+    color: #6d28d9;
+}
+body.theme-finsec-dark .pin-badge { background: rgba(109, 40, 217, 0.25); color: #c4b5fd; }
 
 /* --- Mensajes de estado --- */
 .msg-banner {

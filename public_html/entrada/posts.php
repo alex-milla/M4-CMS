@@ -48,6 +48,17 @@ list($btn_publish, )       = t('btn_publish_post');
 list($post_published_msg, ) = t('post_published_msg');
 list($lbl_scheduled, )     = t('lbl_scheduled');
 list($nav_widgets, )   = t('nav_widgets');
+list($lbl_pinned, )        = t('lbl_pinned');
+list($pinned_badge, )      = t('pinned_badge');
+list($btn_pin, )           = t('btn_pin');
+list($btn_unpin, )         = t('btn_unpin');
+list($btn_move_up, )       = t('btn_move_up');
+list($btn_move_down, )     = t('btn_move_down');
+list($post_pinned_msg, )   = t('post_pinned_msg');
+list($post_unpinned_msg, ) = t('post_unpinned_msg');
+list($post_pin_order_msg, ) = t('post_pin_order_msg');
+list($err_pin_limit, )     = t('err_pin_limit');
+list($confirm_unpin, )     = t('confirm_unpin');
 $lang = $_SESSION['lang'] ?? 'es';
 
 // Theme (FinSec claro/oscuro) — initTheme persiste en DB + sesión
@@ -79,6 +90,45 @@ if (isset($_GET['publish_id'])) {
     exit;
 }
 
+// Anclar una publicacion (maximo 3)
+if (isset($_GET['pin_id'])) {
+    $id = (int)$_GET['pin_id'];
+    $post = getPostById($id);
+    if ($post && pinPost($id)) {
+        logAdminEvent('post_pinned', $post['title'] ?? "id=$id");
+        header('Location: posts.php?pinned=1');
+    } else {
+        header('Location: posts.php?pin_limit=1');
+    }
+    exit;
+}
+
+// Desanclar una publicacion
+if (isset($_GET['unpin_id'])) {
+    $id = (int)$_GET['unpin_id'];
+    $post = getPostById($id);
+    if ($post) {
+        unpinPost($id);
+        logAdminEvent('post_unpinned', $post['title'] ?? "id=$id");
+    }
+    header('Location: posts.php?unpinned=1');
+    exit;
+}
+
+// Reordenar anclados: subir (up) o bajar (down)
+if (isset($_GET['move_id'], $_GET['dir'])) {
+    $id = (int)$_GET['move_id'];
+    $dir = ($_GET['dir'] === 'down') ? 1 : -1;
+    $post = getPostById($id);
+    if ($post && movePinnedPost($id, $dir)) {
+        logAdminEvent('post_pin_reordered', $post['title'] ?? "id=$id");
+        header('Location: posts.php?pin_moved=1');
+    } else {
+        header('Location: posts.php?pin_moved=0');
+    }
+    exit;
+}
+
 // Eliminar publicaciones masivas
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_delete'])) {
     $selected = $_POST['selected_posts'] ?? [];
@@ -99,6 +149,7 @@ $offset = ($currentPage - 1) * $perPage;
 $posts = getAllPostsPaginated($perPage, $offset);
 $totalPosts = countAllPosts();
 $totalPages = max(1, (int)ceil($totalPosts / $perPage));
+$pinnedCount = countPinnedPosts();
 
 // Safe truncation (works without mbstring)
 $truncFunc = function_exists('mb_substr') ? 'mb_substr' : 'substr';
@@ -195,7 +246,7 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
     <main class="admin-main">
         <div class="admin-container">
             <?php
-            $toastType = null;
+            $toastType = 'success';
             $toastMsg = null;
             if (isset($_GET['deleted']) && $_GET['deleted'] == 1) {
                 $toastMsg = $post_deleted_msg;
@@ -203,9 +254,20 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
                 $toastMsg = $post_bulk_deleted_msg;
             } elseif (isset($_GET['published']) && $_GET['published'] == 1) {
                 $toastMsg = $post_published_msg;
+            } elseif (isset($_GET['pinned']) && $_GET['pinned'] == 1) {
+                $toastMsg = $post_pinned_msg;
+            } elseif (isset($_GET['unpinned']) && $_GET['unpinned'] == 1) {
+                $toastMsg = $post_unpinned_msg;
+            } elseif (isset($_GET['pin_moved']) && $_GET['pin_moved'] == 1) {
+                $toastMsg = $post_pin_order_msg;
+            } elseif (isset($_GET['pin_limit']) && $_GET['pin_limit'] == 1) {
+                $toastMsg = $err_pin_limit;
+                $toastType = 'error';
             }
             if ($toastMsg):
-                echo '<div class="admin-toast success" onclick="this.style.display=\'none\'">' . finsec_icon('check', 16) . ' ' . htmlspecialchars($toastMsg) . '</div>';
+                $toastClass = ($toastType === 'error') ? 'error' : 'success';
+                $toastIcon = ($toastType === 'error') ? 'alert' : 'check';
+                echo '<div class="admin-toast ' . $toastClass . '" onclick="this.style.display=\'none\'">' . finsec_icon($toastIcon, 16) . ' ' . htmlspecialchars($toastMsg) . '</div>';
             endif;
             ?>
 
@@ -231,7 +293,12 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
                             <tr>
                                 <td><input type="checkbox" name="selected_posts[]" value="<?php echo $post['id']; ?>" onchange="toggleBulkAction()"></td>
                                 <td class="mono">#<?php echo htmlspecialchars($post['id']); ?></td>
-                                <td><a href="../edit.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($truncFunc($post['title'], 0, 50)); ?><?php echo $lenFunc($post['title']) > 50 ? '...' : ''; ?></a></td>
+                                <td>
+                                    <?php if ((int)($post['pinned_order'] ?? 0) > 0): ?>
+                                    <span class="badge pinned" title="<?php echo htmlspecialchars($lbl_pinned); ?>"><?php echo finsec_icon('pin', 12); ?> <?php echo (int)$post['pinned_order']; ?></span>
+                                    <?php endif; ?>
+                                    <a href="../edit.php?id=<?php echo $post['id']; ?>"><?php echo htmlspecialchars($truncFunc($post['title'], 0, 50)); ?><?php echo $lenFunc($post['title']) > 50 ? '...' : ''; ?></a>
+                                </td>
                                 <td>
                                     <?php
                                     $st = $post['status'] ?? 'published';
@@ -248,6 +315,18 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
                                 <td><?php echo !empty($post['category']) ? htmlspecialchars($post['category']) : '<em style="color:var(--text-3);">' . htmlspecialchars($lbl_no_cat) . '</em>'; ?></td>
                                 <td class="mono"><?php echo htmlspecialchars($post['created_at']); ?></td>
                                 <td>
+                                    <?php $pinOrder = (int)($post['pinned_order'] ?? 0); ?>
+                                    <?php if ($pinOrder > 0): ?>
+                                        <?php if ($pinOrder > 1): ?>
+                                        <a href="?move_id=<?php echo $post['id']; ?>&amp;dir=up" class="action-btn" title="<?php echo htmlspecialchars($btn_move_up); ?>"><?php echo finsec_icon('arrow-up', 14); ?></a>
+                                        <?php endif; ?>
+                                        <?php if ($pinOrder < $pinnedCount): ?>
+                                        <a href="?move_id=<?php echo $post['id']; ?>&amp;dir=down" class="action-btn" title="<?php echo htmlspecialchars($btn_move_down); ?>"><?php echo finsec_icon('arrow-down', 14); ?></a>
+                                        <?php endif; ?>
+                                        <a href="?unpin_id=<?php echo $post['id']; ?>" class="action-btn" onclick="return confirm('<?php echo htmlspecialchars($confirm_unpin, ENT_QUOTES); ?>');"><?php echo finsec_icon('pin', 14); ?> <?php echo htmlspecialchars($btn_unpin); ?></a>
+                                    <?php else: ?>
+                                        <a href="?pin_id=<?php echo $post['id']; ?>" class="action-btn"><?php echo finsec_icon('pin', 14); ?> <?php echo htmlspecialchars($btn_pin); ?></a>
+                                    <?php endif; ?>
                                     <?php if (($post['status'] ?? 'published') === 'draft'): ?>
                                     <a href="?publish_id=<?php echo $post['id']; ?>" class="action-btn"><?php echo finsec_icon('eye', 14); ?> <?php echo htmlspecialchars($btn_publish); ?></a>
                                     <?php endif; ?>

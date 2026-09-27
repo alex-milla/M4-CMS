@@ -16,6 +16,7 @@ function createTable() {
         slug TEXT,
         category TEXT,
         tags TEXT,
+        pinned_order INTEGER NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )";
@@ -63,6 +64,9 @@ function createTable() {
     }
     if (!in_array('tags', $col_names)) {
         $db->exec("ALTER TABLE posts ADD COLUMN tags TEXT");
+    }
+    if (!in_array('pinned_order', $col_names)) {
+        $db->exec("ALTER TABLE posts ADD COLUMN pinned_order INTEGER NOT NULL DEFAULT 0");
     }
 
     // Insertar valores por defecto si no existen
@@ -253,6 +257,105 @@ function searchPosts($query) {
     $like = '%' . $query . '%';
     $stmt->execute([$like, $like, $like]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ===== POSTS ANCLADOS (fijados arriba de la portada) =====
+
+// Maximo de publicaciones ancladas
+function maxPinnedPosts() {
+    return 3;
+}
+
+// Publicaciones ancladas visibles (publicadas y ya en fecha), en el orden elegido
+function getPinnedPosts() {
+    global $db;
+    $stmt = $db->query("SELECT * FROM posts WHERE pinned_order > 0 AND status = 'published' AND created_at <= datetime('now','localtime') ORDER BY pinned_order ASC, created_at DESC");
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Numero de publicaciones ancladas (cualquier estado)
+function countPinnedPosts() {
+    global $db;
+    return (int)$db->query("SELECT COUNT(*) FROM posts WHERE pinned_order > 0")->fetchColumn();
+}
+
+// ¿Esta anclada esta publicacion?
+function isPostPinned($id) {
+    global $db;
+    $stmt = $db->prepare("SELECT pinned_order FROM posts WHERE id = ?");
+    $stmt->execute([(int)$id]);
+    $order = $stmt->fetchColumn();
+    return $order !== false && (int)$order > 0;
+}
+
+// Renumerar las publicaciones ancladas a 1..N respetando su orden actual
+function renumberPinnedPosts() {
+    global $db;
+    $rows = $db->query("SELECT id FROM posts WHERE pinned_order > 0 ORDER BY pinned_order ASC, id ASC")->fetchAll(PDO::FETCH_COLUMN);
+    $stmt = $db->prepare("UPDATE posts SET pinned_order = ? WHERE id = ?");
+    $pos = 1;
+    foreach ($rows as $rowId) {
+        $stmt->execute([$pos++, (int)$rowId]);
+    }
+}
+
+// Anclar una publicacion. false si ya hay el maximo; true si quedo anclada (o ya lo estaba)
+function pinPost($id) {
+    global $db;
+    $id = (int)$id;
+    if ($id <= 0 || !getPostById($id)) return false;
+    if (isPostPinned($id)) return true;
+    if (countPinnedPosts() >= maxPinnedPosts()) return false;
+
+    $stmt = $db->query("SELECT COALESCE(MAX(pinned_order), 0) FROM posts WHERE pinned_order > 0");
+    $next = (int)$stmt->fetchColumn() + 1;
+
+    $upd = $db->prepare("UPDATE posts SET pinned_order = ? WHERE id = ?");
+    return $upd->execute([$next, $id]);
+}
+
+// Desanclar una publicacion y compactar el orden restante
+function unpinPost($id) {
+    global $db;
+    $id = (int)$id;
+    if ($id <= 0) return false;
+    $stmt = $db->prepare("UPDATE posts SET pinned_order = 0 WHERE id = ?");
+    $ok = $stmt->execute([$id]);
+    renumberPinnedPosts();
+    return $ok;
+}
+
+// Mover una publicacion anclada arriba (-1) o abajo (+1) intercambiando con su vecina
+function movePinnedPost($id, $delta) {
+    global $db;
+    $id = (int)$id;
+    $delta = (int)$delta;
+    if ($id <= 0 || !in_array($delta, [-1, 1], true)) return false;
+
+    $curStmt = $db->prepare("SELECT pinned_order FROM posts WHERE id = ?");
+    $curStmt->execute([$id]);
+    $current = (int)$curStmt->fetchColumn();
+    if ($current <= 0) return false;
+
+    $target = $current + $delta;
+    if ($target < 1) return false;
+
+    $swapStmt = $db->prepare("SELECT id FROM posts WHERE pinned_order = ? LIMIT 1");
+    $swapStmt->execute([$target]);
+    $swapId = $swapStmt->fetchColumn();
+    if ($swapId === false) return false; // ya esta en el extremo
+
+    try {
+        $db->beginTransaction();
+        $upd = $db->prepare("UPDATE posts SET pinned_order = ? WHERE id = ?");
+        $upd->execute([$target, $id]);
+        $upd->execute([$current, (int)$swapId]);
+        $db->commit();
+        return true;
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        return false;
+    }
 }
 
 // Generar slug unico a partir de un titulo

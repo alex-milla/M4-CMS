@@ -75,6 +75,8 @@ list($_published_on, )    = t('lbl_published_on');
 list($_theme_lbl, )       = t('admin_theme_label');
 list($_read_more, )       = t('lbl_back_to_list');
 list($_lbl_lang, )        = t('lbl_lang');
+list($_lbl_pinned, )      = t('lbl_pinned');
+list($_pinned_badge, )    = t('pinned_badge');
 // Use site title from DB regardless of i18n key since it's a dynamic value
 $displayTitle = htmlspecialchars($siteTitle);
 ?>
@@ -150,6 +152,47 @@ $displayTitle = htmlspecialchars($siteTitle);
         <main>
 
             <?php if (empty($searchQuery) && empty($categoryFilter) && empty($tagFilter)): ?>
+                <?php $pinnedPosts = getPinnedPosts(); ?>
+                <?php if (!empty($pinnedPosts)): ?>
+                <section class="pinned-posts">
+                    <h2 class="pinned-section-title"><?php echo finsec_icon('pin', 16); ?> <?php echo htmlspecialchars($_lbl_pinned); ?></h2>
+                    <?php foreach ($pinnedPosts as $post): ?>
+                    <article class="post pinned">
+                        <h3><a href="<?php echo htmlspecialchars(postUrl($post['slug'] ?? $post['id'])); ?>"><?php echo htmlspecialchars($post['title']); ?></a></h3>
+                        <p class="date">
+                            <?php echo finsec_icon('calendar', 12); ?>
+                            <?php echo htmlspecialchars($_published_on . ' ' . $post['created_at']); ?>
+                            <span class="pin-badge"><?php echo finsec_icon('pin', 12); ?> <?php echo htmlspecialchars($_pinned_badge); ?></span>
+                        </p>
+                        <div class="content">
+                            <?php
+                            $raw = preg_replace('/\r\n|\r/', "\n", htmlspecialchars($post['content'], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                            $blocks = preg_split("/\n\n+/", $raw);
+                            // Excerpt: solo primer bloque en el listado
+                            $firstBlock = $blocks[0] ?? '';
+                            $excerpt = substr_count($firstBlock, "\n") > 0 ? trim($firstBlock) : $firstBlock;
+                            $excerptTruncated = strlen($excerpt) > 200;
+                            if ($excerptTruncated) $excerpt = substr($excerpt, 0, 200) . '...';
+                            echo nl2br($excerptTruncated || !function_exists('autoLinkUrls') ? $excerpt : autoLinkUrls($excerpt));
+                            ?>
+                        </div>
+                        <?php if (!empty($post['category']) || !empty($post['tags'])): ?>
+                        <div class="meta-row">
+                            <?php if (!empty($post['category'])): ?>
+                            <a class="chip" href="?cat=<?php echo urlencode($post['category']); ?>"><?php echo finsec_icon('folder', 12); ?> <?php echo htmlspecialchars($post['category']); ?></a>
+                            <?php endif; ?>
+                            <?php if (!empty($post['tags'])): ?>
+                                <?php foreach (explode(',', $post['tags']) as $t): $t = trim($t); if ($t === '') continue; ?>
+                                <a class="chip" href="?tag=<?php echo urlencode($t); ?>"><?php echo finsec_icon('tag', 12); ?> <?php echo htmlspecialchars($t); ?></a>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+                        <p style="margin-top: 16px;"><a href="<?php echo htmlspecialchars(postUrl($post['slug'] ?? $post['id'])); ?>"><?php echo htmlspecialchars($_read_more); ?> <?php echo finsec_icon('arrow-right', 14); ?></a></p>
+                    </article>
+                    <?php endforeach; ?>
+                </section>
+                <?php endif; ?>
                 <?php renderWidgets('footer'); ?>
             <?php endif; ?>
 

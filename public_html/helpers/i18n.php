@@ -256,6 +256,22 @@ function t($key) {
         'log_widget_updated' => ['en' => 'Block updated', 'es' => 'Bloque actualizado'],
         'log_widget_deleted' => ['en' => 'Block deleted', 'es' => 'Bloque eliminado'],
         'log_widget_module' => ['en' => 'Blocks module toggled', 'es' => 'Módulo de bloques activado/desactivado'],
+
+        // --- Posts anclados ---
+        'lbl_pinned' => ['en' => 'Pinned', 'es' => 'Destacados'],
+        'pinned_badge' => ['en' => 'Pinned', 'es' => 'Anclado'],
+        'btn_pin' => ['en' => 'Pin', 'es' => 'Anclar'],
+        'btn_unpin' => ['en' => 'Unpin', 'es' => 'Desanclar'],
+        'btn_move_up' => ['en' => 'Move up', 'es' => 'Subir'],
+        'btn_move_down' => ['en' => 'Move down', 'es' => 'Bajar'],
+        'post_pinned_msg' => ['en' => 'Post pinned successfully.', 'es' => 'Publicación anclada correctamente.'],
+        'post_unpinned_msg' => ['en' => 'Post unpinned successfully.', 'es' => 'Publicación desanclada correctamente.'],
+        'post_pin_order_msg' => ['en' => 'Pinned order updated.', 'es' => 'Orden de anclados actualizado.'],
+        'err_pin_limit' => ['en' => 'You can pin up to 3 posts. Unpin one first.', 'es' => 'Solo puedes anclar hasta 3 publicaciones. Desancla una primero.'],
+        'confirm_unpin' => ['en' => 'Unpin this post?', 'es' => '¿Desanclar esta publicación?'],
+        'log_post_pinned' => ['en' => 'Post pinned', 'es' => 'Publicación anclada'],
+        'log_post_unpinned' => ['en' => 'Post unpinned', 'es' => 'Publicación desanclada'],
+        'log_post_pin_reordered' => ['en' => 'Pinned posts reordered', 'es' => 'Anclados reordenados'],
     ];
 
     return [$translations[$key][$lang] ?? $key, $lang];

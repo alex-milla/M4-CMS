@@ -477,9 +477,11 @@ body.theme-finsec-dark .admin-quick-action:hover { border-color: var(--brand-700
 .badge.published { background: #dcfce7; color: #15803d; }
 .badge.draft     { background: #fef9c3; color: #a16207; }
 .badge.scheduled { background: #dbeafe; color: #1d4ed8; }
+.badge.pinned    { background: #ede9fe; color: #6d28d9; margin-right: 6px; }
 body.theme-finsec-dark .badge.published { background: rgba(22, 163, 74, 0.2); color: #4ade80; }
 body.theme-finsec-dark .badge.draft     { background: rgba(217, 119, 6, 0.2); color: #fbbf24; }
 body.theme-finsec-dark .badge.scheduled { background: rgba(37, 99, 235, 0.2); color: #60a5fa; }
+body.theme-finsec-dark .badge.pinned    { background: rgba(109, 40, 217, 0.25); color: #c4b5fd; }
 
 /* Botones de acción de tabla */
 .action-btn {
@@ -667,7 +669,9 @@ body.theme-finsec-dark .error { background: rgba(127, 29, 29, 0.2); color: #f871
     animation: toastIn 0.25s ease;
 }
 .admin-toast.success { background: #f0fdf4; color: #16a34a; }
+.admin-toast.error { background: #fef2f2; color: #dc2626; }
 body.theme-finsec-dark .admin-toast.success { background: rgba(20, 83, 45, 0.25); color: #4ade80; }
+body.theme-finsec-dark .admin-toast.error { background: rgba(127, 29, 29, 0.25); color: #f87171; }
 
 @keyframes toastIn {
     from { opacity: 0; transform: translateY(-6px); }
