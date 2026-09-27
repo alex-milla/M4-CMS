@@ -277,6 +277,7 @@ function t($key) {
         'err_csrf' => ['en' => 'Invalid session token. Reload the page and try again.', 'es' => 'Token de sesión no válido. Recarga la página e inténtalo de nuevo.'],
         'err_creds_password' => ['en' => 'Current password is incorrect. Account changes were not saved.', 'es' => 'La contraseña actual es incorrecta. No se guardaron los cambios de cuenta.'],
         'lbl_admin_current_password' => ['en' => 'Current password (required to change user or password)', 'es' => 'Contraseña actual (obligatoria para cambiar usuario o contraseña)'],
+        'err_login_rate_limited' => ['en' => 'Too many failed attempts. Please try again later.', 'es' => 'Demasiados intentos fallidos. Inténtalo de nuevo más tarde.'],
     ];
 
     return [$translations[$key][$lang] ?? $key, $lang];

@@ -1,11 +1,13 @@
 <?php
 // Formulario para crear nueva publicación
-session_start();
+include_once __DIR__ . '/helpers/session.php';
+m4_session_start();
 include_once 'config.php';
 include_once 'db/functions.php';
 include_once 'helpers/theme.php';
 include_once 'helpers/i18n.php';
 include_once 'helpers/icons.php';
+include_once __DIR__ . '/helpers/csrf.php';
 
 // Verificar si el usuario está logeado como administrador
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
@@ -43,6 +45,10 @@ list($lbl_no_cat, )       = t('lbl_no_category');
 createTable();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrfValidate()) {
+        http_response_code(403);
+        exit('Invalid CSRF token');
+    }
     $title = trim(html_entity_decode((string)($_POST['title'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     $content = trim((string)($_POST['content'] ?? ''));
     $status = ($_POST['status'] ?? 'published') === 'draft' ? 'draft' : 'published';
@@ -99,6 +105,7 @@ list($_lbl_lang, ) = t('lbl_lang');
             <?php endif; ?>
 
             <form method="POST" action="" class="post" style="padding-top: 4px;">
+                <?php echo csrfField(); ?>
                 <div>
                     <label for="title"><?php echo htmlspecialchars($lbl_title_label); ?></label>
                     <input type="text" id="title" name="title" placeholder="<?php echo htmlspecialchars($ph_title_val); ?>" required value="">

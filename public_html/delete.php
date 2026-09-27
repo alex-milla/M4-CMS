@@ -2,7 +2,8 @@
 // Eliminar una publicación
 include_once 'config.php';
 include_once 'db/functions.php';
-session_start();
+include_once __DIR__ . '/helpers/session.php';
+m4_session_start();
 
 // Solo administradores autenticados pueden eliminar publicaciones
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
@@ -14,6 +15,7 @@ include_once 'helpers/theme.php';
 include_once 'helpers/i18n.php';
 include_once 'helpers/content.php';
 include_once 'helpers/icons.php';
+include_once __DIR__ . '/helpers/csrf.php';
 
 // Theme (FinSec claro/oscuro) for session
 if (isset($_POST['theme_setting']) && !empty($_POST['theme_setting'])) {
@@ -46,6 +48,10 @@ if ($id <= 0) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrfValidate()) {
+        http_response_code(403);
+        exit('Invalid CSRF token');
+    }
     deletePost($id);
     header('Location: index.php');
     exit;
@@ -100,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </article>
 
             <form method="POST" action="" style="margin-top: 20px;">
+                <?php echo csrfField(); ?>
                 <button type="submit" class="btn-danger"><?php echo finsec_icon('trash', 16); ?> <?php echo htmlspecialchars($btn_delete); ?></button>
                 <a href="index.php" class="btn"><?php echo htmlspecialchars($btn_cancel); ?></a>
             </form>

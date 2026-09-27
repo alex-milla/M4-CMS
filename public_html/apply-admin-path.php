@@ -2,7 +2,8 @@
 // apply-admin-path.php - Aplica el cambio de ruta del panel admin.
 // Se invoca con un redirect desde admin/settings.php (que vive dentro de la
 // carpeta a renombrar; hacerlo desde la raíz evita bloqueos del SAPI/FS).
-session_start();
+include_once __DIR__ . '/helpers/session.php';
+m4_session_start();
 include_once __DIR__ . '/db/functions.php';
 include_once __DIR__ . '/helpers/i18n.php';
 

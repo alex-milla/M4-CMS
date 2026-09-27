@@ -1,6 +1,7 @@
 <?php
 ob_start();
-session_start();
+include_once __DIR__ . '/../helpers/session.php';
+m4_session_start();
 
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: login.php');
@@ -240,6 +241,7 @@ try {
                 </select>
             </form>
             <form method="POST" action="" style="display:inline;">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="site_theme" value="<?php echo $themeToggle; ?>">
                 <input type="hidden" name="theme_setting" value="<?php echo $themeToggle; ?>">
                 <button type="submit" class="icon-btn" aria-label="<?php echo htmlspecialchars($theme_lbl); ?>" title="<?php echo htmlspecialchars($theme_lbl); ?>">

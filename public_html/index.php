@@ -1,6 +1,7 @@
 <?php
 // Página principal del CMS (Visitor View - no admin links)
-session_start();
+include_once __DIR__ . '/helpers/session.php';
+m4_session_start();
 include_once 'config.php';
 include_once 'db/functions.php';
 include_once 'helpers/theme.php';

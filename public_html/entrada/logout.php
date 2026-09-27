@@ -1,6 +1,7 @@
 <?php
 // Cerrar sesion admin preservando tema e idioma
-session_start();
+include_once __DIR__ . '/../helpers/session.php';
+m4_session_start();
 
 // 1. Capturar theme y lang antes de destruir
 $theme = $_SESSION['theme'] ?? null;
@@ -20,7 +21,7 @@ $_SESSION = array();
 session_destroy();
 
 // 4. Iniciar sesion nueva y restaurar theme/lang
-session_start();
+m4_session_start();
 if ($theme) $_SESSION['theme'] = $theme;
 if ($lang)  $_SESSION['lang']  = $lang;
 

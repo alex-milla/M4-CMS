@@ -657,6 +657,28 @@ function purgeOldLogs($days = 90) {
     } catch (\Throwable $e) { /* ignore */ }
 }
 
+// ===== ANTI-FUERZA BRUTA (login) =====
+
+// Intentos de login fallidos desde una IP en los ultimos N minutos
+// (admin_logs.created_at usa CURRENT_TIMESTAMP = UTC, por eso no se usa localtime)
+function countRecentLoginFails($ip, $minutes = 15) {
+    try {
+        global $db;
+        if (!$db) return 0;
+        ensureLogTable();
+        $stmt = $db->prepare("SELECT COUNT(*) FROM admin_logs WHERE event = 'login_fail' AND ip = ? AND created_at > datetime('now', '-' || ? || ' minutes')");
+        $stmt->execute([(string)$ip, (int)$minutes]);
+        return (int)$stmt->fetchColumn();
+    } catch (\Throwable $e) {
+        return 0;
+    }
+}
+
+// ¿Se ha superado el limite de intentos fallidos para esta IP?
+function loginAttemptsExceeded($ip, $max = 8, $minutes = 15) {
+    return countRecentLoginFails($ip, $minutes) >= (int)$max;
+}
+
 // Obtener logs (paginados)
 function getAdminLogs($limit = 50, $offset = 0) {
     global $db;
@@ -729,10 +751,7 @@ function verifyAdminCredential($inputUser, $inputPassword) {
     try {
         @include_once $cmsRoot . '/config.php';
         if (defined('ADMIN_USER') && ADMIN_USER !== '__fallback__' && defined('ADMIN_PASSWORD')) {
-            if ($inputUser === ADMIN_USER) {
-                if (password_verify($inputPassword, ADMIN_PASSWORD)) return true;
-                if ($inputPassword === ADMIN_PASSWORD || md5($inputPassword) === ADMIN_PASSWORD) return true;
-            }
+            if ($inputUser === ADMIN_USER && password_verify($inputPassword, ADMIN_PASSWORD)) return true;
         }
     } catch (\Throwable $e) { /* ignore */ }
 

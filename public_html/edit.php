@@ -2,10 +2,12 @@
 // Formulario para editar publicación existente
 include_once 'config.php';
 include_once 'db/functions.php';
-session_start();
+include_once __DIR__ . '/helpers/session.php';
+m4_session_start();
 include_once 'helpers/theme.php';
 include_once 'helpers/i18n.php';
 include_once 'helpers/icons.php';
+include_once __DIR__ . '/helpers/csrf.php';
 
 // Theme (FinSec claro/oscuro) for admin session
 if (isset($_POST['theme_setting']) && !empty($_POST['theme_setting'])) {
@@ -53,6 +55,10 @@ list($lbl_category, )         = t('lbl_category');
 list($ph_category, )          = t('ph_category');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrfValidate()) {
+        http_response_code(403);
+        exit('Invalid CSRF token');
+    }
     $title = trim(html_entity_decode((string)($_POST['title'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     $content = trim((string)($_POST['content'] ?? ''));
     $status = ($_POST['status'] ?? 'published') === 'draft' ? 'draft' : 'published';
@@ -105,6 +111,7 @@ $usedTags = getUsedTags();
             <?php endif; ?>
 
             <form method="POST" action="" class="post" style="padding-top: 4px;">
+                <?php echo csrfField(); ?>
                 <div>
                     <label for="title"><?php echo htmlspecialchars($lbl_title_label); ?></label>
                     <input type="text" id="title" name="title" placeholder="<?php echo htmlspecialchars($ph_title_val); ?>" value="<?php echo htmlspecialchars($post['title']); ?>" required>

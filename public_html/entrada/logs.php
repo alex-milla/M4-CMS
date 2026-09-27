@@ -1,6 +1,7 @@
 <?php
 // Registro de actividad admin
-session_start();
+include_once __DIR__ . '/../helpers/session.php';
+m4_session_start();
 
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: login.php');

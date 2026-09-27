@@ -1,12 +1,14 @@
 <?php
 ob_start();
-session_start();
+include_once __DIR__ . '/../helpers/session.php';
+m4_session_start();
 
 // --- i18n setup (login needs translations for UI) ---
 include_once '../helpers/i18n.php';
 include_once '../helpers/theme.php';
 include_once '../helpers/icons.php';
 include_once '../db/functions.php';
+include_once __DIR__ . '/../helpers/csrf.php';
 $lang = $_SESSION['lang'] ?? 'es';
 
 // --- Theme initialization (FinSec: claro / oscuro) ---
@@ -34,6 +36,8 @@ list($ph_user, )       = t('ph_username_ph');
 list($ph_pass, )       = t('ph_password_ph');
 list($btn_enter, )     = t('btn_login_enter');
 list($err_credentials, ) = t('err_user_pass_incorrect');
+list($err_csrf, )        = t('err_csrf');
+list($err_rate_limited, ) = t('err_login_rate_limited');
 list($_back_site, )    = t('nav_back_to_site');
 
 // Título de marca: nombre del sitio desde settings
@@ -49,14 +53,21 @@ try {
 // --- Credential verification: verifyAdminCredential() vive en db/functions.php ---
 
 $error = null;
+$clientIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $_POST['user'] ?? '';
     $pass = $_POST['password'] ?? '';
 
-    if (!empty($user) && !empty($pass)) {
+    if (!csrfValidate()) {
+        $error = $err_csrf;
+    } elseif (loginAttemptsExceeded($clientIp)) {
+        logAdminEvent('login_blocked', (string)$user);
+        $error = $err_rate_limited;
+    } elseif (!empty($user) && !empty($pass)) {
         if (verifyAdminCredential($user, $pass)) {
             logAdminEvent('login_success', $user);
             purgeOldLogs(90);
+            session_regenerate_id(true);
             $_SESSION['admin_logged_in'] = true;
             $_SESSION['admin_user'] = $user;
             $_SESSION['theme'] = $theme;
@@ -92,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Tarjeta formulario -->
             <form method="POST" action="" class="login-card login-form">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="theme_setting" value="<?php echo $theme; ?>">
 
                 <div>

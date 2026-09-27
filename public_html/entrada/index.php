@@ -1,6 +1,7 @@
 <?php
 ob_start();
-session_start();
+include_once __DIR__ . '/../helpers/session.php';
+m4_session_start();
 
 // -- Logout (before any output) --
 if (isset($_GET['logout'])) {

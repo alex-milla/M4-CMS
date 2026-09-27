@@ -12,7 +12,8 @@
  * Nunca sobrescribe config.php, .env, admin_config.php ni la base de datos.
  */
 ob_start();
-session_start();
+include_once __DIR__ . '/../helpers/session.php';
+m4_session_start();
 
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: login.php');
@@ -488,6 +489,7 @@ list($confirm_restore, )   = t('update_confirm_restore');
                 </select>
             </form>
             <form method="POST" action="" style="display:inline;">
+                <?php csrfField(); ?>
                 <input type="hidden" name="site_theme" value="<?php echo $themeToggle; ?>">
                 <input type="hidden" name="theme_setting" value="<?php echo $themeToggle; ?>">
                 <button type="submit" class="icon-btn" aria-label="<?php echo htmlspecialchars($theme_lbl); ?>" title="<?php echo htmlspecialchars($theme_lbl); ?>">

@@ -1,6 +1,7 @@
 <?php
 // Panel de gestion de publicaciones
-session_start();
+include_once __DIR__ . '/../helpers/session.php';
+m4_session_start();
 
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: login.php');
@@ -11,6 +12,7 @@ include_once '../config.php';
 include_once '../helpers/theme.php';
 include_once '../helpers/i18n.php';
 include_once '../helpers/icons.php';
+include_once __DIR__ . '/../helpers/csrf.php';
 
 // Cadenas de traduccion
 list($page_title, )        = t('page_manage_posts_title');
@@ -68,9 +70,15 @@ $class = 'theme-' . htmlspecialchars($theme);
 
 createTable();
 
+// CSRF: toda escritura admin pasa por POST con token de sesión
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrfValidate()) {
+    http_response_code(403);
+    exit('Invalid CSRF token');
+}
+
 // Eliminar publicacion
-if (isset($_GET['delete_id'])) {
-    $id = (int)$_GET['delete_id'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
+    $id = (int)$_POST['delete_id'];
     $post = getPostById($id);
     deletePost($id);
     logAdminEvent('post_deleted', $post['title'] ?? "id=$id");
@@ -79,8 +87,8 @@ if (isset($_GET['delete_id'])) {
 }
 
 // Publicar borrador rapidamente
-if (isset($_GET['publish_id'])) {
-    $id = (int)$_GET['publish_id'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['publish_id'])) {
+    $id = (int)$_POST['publish_id'];
     $post = getPostById($id);
     if ($post && ($post['status'] ?? '') === 'draft') {
         updatePost($id, $post['title'], $post['content'], 'published', $post['slug'] ?? '', $post['category'] ?? '');
@@ -91,8 +99,8 @@ if (isset($_GET['publish_id'])) {
 }
 
 // Anclar una publicacion (maximo 3)
-if (isset($_GET['pin_id'])) {
-    $id = (int)$_GET['pin_id'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pin_id'])) {
+    $id = (int)$_POST['pin_id'];
     $post = getPostById($id);
     if ($post && pinPost($id)) {
         logAdminEvent('post_pinned', $post['title'] ?? "id=$id");
@@ -104,8 +112,8 @@ if (isset($_GET['pin_id'])) {
 }
 
 // Desanclar una publicacion
-if (isset($_GET['unpin_id'])) {
-    $id = (int)$_GET['unpin_id'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['unpin_id'])) {
+    $id = (int)$_POST['unpin_id'];
     $post = getPostById($id);
     if ($post) {
         unpinPost($id);
@@ -116,9 +124,9 @@ if (isset($_GET['unpin_id'])) {
 }
 
 // Reordenar anclados: subir (up) o bajar (down)
-if (isset($_GET['move_id'], $_GET['dir'])) {
-    $id = (int)$_GET['move_id'];
-    $dir = ($_GET['dir'] === 'down') ? 1 : -1;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['move_id'], $_POST['dir'])) {
+    $id = (int)$_POST['move_id'];
+    $dir = ($_POST['dir'] === 'down') ? 1 : -1;
     $post = getPostById($id);
     if ($post && movePinnedPost($id, $dir)) {
         logAdminEvent('post_pin_reordered', $post['title'] ?? "id=$id");
@@ -233,6 +241,7 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
                 </select>
             </form>
             <form method="POST" action="" style="display:inline;">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="site_theme" value="<?php echo $themeToggle; ?>">
                 <input type="hidden" name="theme_setting" value="<?php echo $themeToggle; ?>">
                 <button type="submit" class="icon-btn" aria-label="<?php echo htmlspecialchars($theme_lbl); ?>" title="<?php echo htmlspecialchars($theme_lbl); ?>">
@@ -272,9 +281,6 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
             ?>
 
             <?php if (!empty($posts)): ?>
-            <form method="POST" action="" id="bulkForm">
-                <input type="hidden" name="bulk_delete" value="1">
-
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
@@ -291,7 +297,7 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
                         <tbody>
 <?php foreach ($posts as $post): ?>
                             <tr>
-                                <td><input type="checkbox" name="selected_posts[]" value="<?php echo $post['id']; ?>" onchange="toggleBulkAction()"></td>
+                                <td><input type="checkbox" name="selected_posts[]" value="<?php echo $post['id']; ?>" form="bulkForm" onchange="toggleBulkAction()"></td>
                                 <td class="mono">#<?php echo htmlspecialchars($post['id']); ?></td>
                                 <td>
                                     <?php if ((int)($post['pinned_order'] ?? 0) > 0): ?>
@@ -318,20 +324,46 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
                                     <?php $pinOrder = (int)($post['pinned_order'] ?? 0); ?>
                                     <?php if ($pinOrder > 0): ?>
                                         <?php if ($pinOrder > 1): ?>
-                                        <a href="?move_id=<?php echo $post['id']; ?>&amp;dir=up" class="action-btn" title="<?php echo htmlspecialchars($btn_move_up); ?>"><?php echo finsec_icon('arrow-up', 14); ?></a>
+                                        <form method="POST" action="" style="display:inline;">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="move_id" value="<?php echo (int)$post['id']; ?>">
+                                            <input type="hidden" name="dir" value="up">
+                                            <button type="submit" class="action-btn" title="<?php echo htmlspecialchars($btn_move_up); ?>"><?php echo finsec_icon('arrow-up', 14); ?></button>
+                                        </form>
                                         <?php endif; ?>
                                         <?php if ($pinOrder < $pinnedCount): ?>
-                                        <a href="?move_id=<?php echo $post['id']; ?>&amp;dir=down" class="action-btn" title="<?php echo htmlspecialchars($btn_move_down); ?>"><?php echo finsec_icon('arrow-down', 14); ?></a>
+                                        <form method="POST" action="" style="display:inline;">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="move_id" value="<?php echo (int)$post['id']; ?>">
+                                            <input type="hidden" name="dir" value="down">
+                                            <button type="submit" class="action-btn" title="<?php echo htmlspecialchars($btn_move_down); ?>"><?php echo finsec_icon('arrow-down', 14); ?></button>
+                                        </form>
                                         <?php endif; ?>
-                                        <a href="?unpin_id=<?php echo $post['id']; ?>" class="action-btn" onclick="return confirm('<?php echo htmlspecialchars($confirm_unpin, ENT_QUOTES); ?>');"><?php echo finsec_icon('pin', 14); ?> <?php echo htmlspecialchars($btn_unpin); ?></a>
+                                        <form method="POST" action="" style="display:inline;" onsubmit="return confirm('<?php echo htmlspecialchars($confirm_unpin, ENT_QUOTES); ?>');">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="unpin_id" value="<?php echo (int)$post['id']; ?>">
+                                            <button type="submit" class="action-btn"><?php echo finsec_icon('pin', 14); ?> <?php echo htmlspecialchars($btn_unpin); ?></button>
+                                        </form>
                                     <?php else: ?>
-                                        <a href="?pin_id=<?php echo $post['id']; ?>" class="action-btn"><?php echo finsec_icon('pin', 14); ?> <?php echo htmlspecialchars($btn_pin); ?></a>
+                                        <form method="POST" action="" style="display:inline;">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="pin_id" value="<?php echo (int)$post['id']; ?>">
+                                            <button type="submit" class="action-btn"><?php echo finsec_icon('pin', 14); ?> <?php echo htmlspecialchars($btn_pin); ?></button>
+                                        </form>
                                     <?php endif; ?>
                                     <?php if (($post['status'] ?? 'published') === 'draft'): ?>
-                                    <a href="?publish_id=<?php echo $post['id']; ?>" class="action-btn"><?php echo finsec_icon('eye', 14); ?> <?php echo htmlspecialchars($btn_publish); ?></a>
+                                    <form method="POST" action="" style="display:inline;">
+                                        <?php echo csrfField(); ?>
+                                        <input type="hidden" name="publish_id" value="<?php echo (int)$post['id']; ?>">
+                                        <button type="submit" class="action-btn"><?php echo finsec_icon('eye', 14); ?> <?php echo htmlspecialchars($btn_publish); ?></button>
+                                    </form>
                                     <?php endif; ?>
                                     <a href="../edit.php?id=<?php echo $post['id']; ?>" class="action-btn"><?php echo finsec_icon('pencil', 14); ?> <?php echo htmlspecialchars($btn_edit); ?></a>
-                                    <a href="?delete_id=<?php echo $post['id']; ?>" class="action-btn delete" onclick="return confirm('<?php echo htmlspecialchars($confirm_delete, ENT_QUOTES); ?>');"><?php echo finsec_icon('trash', 14); ?> <?php echo htmlspecialchars($btn_delete); ?></a>
+                                    <form method="POST" action="" style="display:inline;" onsubmit="return confirm('<?php echo htmlspecialchars($confirm_delete, ENT_QUOTES); ?>');">
+                                        <?php echo csrfField(); ?>
+                                        <input type="hidden" name="delete_id" value="<?php echo (int)$post['id']; ?>">
+                                        <button type="submit" class="action-btn delete"><?php echo finsec_icon('trash', 14); ?> <?php echo htmlspecialchars($btn_delete); ?></button>
+                                    </form>
                                 </td>
                             </tr>
 <?php endforeach; ?>
@@ -339,6 +371,9 @@ $lenFunc = function_exists('mb_strlen') ? 'mb_strlen' : 'strlen';
                     </table>
                 </div>
 
+            <form method="POST" action="" id="bulkForm">
+                <?php echo csrfField(); ?>
+                <input type="hidden" name="bulk_delete" value="1">
                 <div class="admin-bulk-actions">
                     <button type="button" id="selectAllBtn" onclick="toggleSelectAll()"><?php echo htmlspecialchars($lbl_select_all); ?></button>
                     <button type="submit" id="bulkDeleteBtn" class="btn-danger" disabled onclick="return confirm('<?php echo htmlspecialchars($confirm_bulk, ENT_QUOTES); ?>');"><?php echo htmlspecialchars($btn_delete_sel); ?></button>

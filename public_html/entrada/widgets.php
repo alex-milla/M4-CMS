@@ -1,7 +1,8 @@
 <?php
 // Panel de gestión de bloques (widgets): enlaces de referencia, texto+enlace, embeds.
 // Módulo desactivado por defecto: se activa desde aquí (setting widgets_enabled).
-session_start();
+include_once __DIR__ . '/../helpers/session.php';
+m4_session_start();
 
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: login.php');
@@ -13,6 +14,7 @@ include_once '../helpers/theme.php';
 include_once '../helpers/i18n.php';
 include_once '../helpers/icons.php';
 include_once '../helpers/widgets.php';
+include_once __DIR__ . '/../helpers/csrf.php';
 
 // Cadenas de traducción
 list($page_title, )        = t('page_widgets_title');
@@ -71,6 +73,12 @@ function validateWidgetInput($content) {
 
 $error_txt = '';
 
+// CSRF: toda escritura admin pasa por POST con token de sesión
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrfValidate()) {
+    http_response_code(403);
+    exit('Invalid CSRF token');
+}
+
 // Activar / desactivar el módulo
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['module_toggle'])) {
     $newState = ($_POST['module_toggle'] === '1') ? '1' : '0';
@@ -103,8 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['widget_save'])) {
 }
 
 // Eliminar bloque
-if (isset($_GET['delete_id'])) {
-    $id = (int)$_GET['delete_id'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
+    $id = (int)$_POST['delete_id'];
     $w = getWidgetById($id);
     deleteWidget($id);
     logAdminEvent('widget_deleted', $w['title'] ?? "id=$id");
@@ -113,8 +121,8 @@ if (isset($_GET['delete_id'])) {
 }
 
 // Alternar estado published/draft
-if (isset($_GET['toggle_id'])) {
-    $id = (int)$_GET['toggle_id'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_id'])) {
+    $id = (int)$_POST['toggle_id'];
     $w = getWidgetById($id);
     if ($w) {
         $newStatus = ($w['status'] === 'published') ? 'draft' : 'published';
@@ -213,6 +221,7 @@ $widget_count = countWidgets();
                 </select>
             </form>
             <form method="POST" action="" style="display:inline;">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="site_theme" value="<?php echo $themeToggle; ?>">
                 <input type="hidden" name="theme_setting" value="<?php echo $themeToggle; ?>">
                 <button type="submit" class="icon-btn" aria-label="<?php echo htmlspecialchars($theme_lbl); ?>" title="<?php echo htmlspecialchars($theme_lbl); ?>">
@@ -263,6 +272,7 @@ $widget_count = countWidgets();
                         <span class="badge published"><?php echo htmlspecialchars($lbl_published); ?></span>
                         <span style="color:var(--text-2);margin-left:8px;"><?php echo htmlspecialchars($wdg_enabled_msg); ?></span>
                         <form method="POST" action="" style="display:inline;margin-left:12px;">
+                            <?php echo csrfField(); ?>
                             <input type="hidden" name="module_toggle" value="0">
                             <button type="submit" class="btn-danger"><?php echo htmlspecialchars($btn_disable); ?></button>
                         </form>
@@ -270,6 +280,7 @@ $widget_count = countWidgets();
                         <span class="badge draft"><?php echo htmlspecialchars($lbl_draft); ?></span>
                         <span style="color:var(--text-2);margin-left:8px;"><?php echo htmlspecialchars($wdg_disabled_msg); ?></span>
                         <form method="POST" action="" style="display:inline;margin-left:12px;">
+                            <?php echo csrfField(); ?>
                             <input type="hidden" name="module_toggle" value="1">
                             <button type="submit" class="btn-primary"><?php echo htmlspecialchars($btn_enable); ?></button>
                         </form>
@@ -281,6 +292,7 @@ $widget_count = countWidgets();
             <div class="admin-card">
                 <h3><?php echo finsec_icon('plus', 16); ?> <?php echo htmlspecialchars($editing ? $btn_edit : $btn_new); ?></h3>
                 <form method="POST" action="">
+                    <?php echo csrfField(); ?>
                     <input type="hidden" name="widget_save" value="1">
                     <input type="hidden" name="widget_id" value="<?php echo (int)($editing['id'] ?? 0); ?>">
 
@@ -342,9 +354,17 @@ $widget_count = countWidgets();
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <a href="?toggle_id=<?php echo (int)$w['id']; ?>" class="action-btn"><?php echo finsec_icon('eye', 14); ?></a>
+                                <form method="POST" action="" style="display:inline;">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="toggle_id" value="<?php echo (int)$w['id']; ?>">
+                                    <button type="submit" class="action-btn"><?php echo finsec_icon('eye', 14); ?></button>
+                                </form>
                                 <a href="?edit_id=<?php echo (int)$w['id']; ?>" class="action-btn"><?php echo finsec_icon('pencil', 14); ?> <?php echo htmlspecialchars($btn_edit); ?></a>
-                                <a href="?delete_id=<?php echo (int)$w['id']; ?>" class="action-btn delete" onclick="return confirm('<?php echo htmlspecialchars($confirm_delete, ENT_QUOTES); ?>');"><?php echo finsec_icon('trash', 14); ?> <?php echo htmlspecialchars($btn_delete); ?></a>
+                                <form method="POST" action="" style="display:inline;" onsubmit="return confirm('<?php echo htmlspecialchars($confirm_delete, ENT_QUOTES); ?>');">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="delete_id" value="<?php echo (int)$w['id']; ?>">
+                                    <button type="submit" class="action-btn delete"><?php echo finsec_icon('trash', 14); ?> <?php echo htmlspecialchars($btn_delete); ?></button>
+                                </form>
                             </td>
                         </tr>
 <?php endforeach; ?>

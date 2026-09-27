@@ -1,12 +1,14 @@
 <?php
 // Pagina individual de una publicacion por slug
-session_start();
+include_once __DIR__ . '/helpers/session.php';
+m4_session_start();
 include_once 'config.php';
 include_once 'db/functions.php';
 include_once 'helpers/theme.php';
 include_once 'helpers/i18n.php';
 include_once 'helpers/content.php';
 include_once 'helpers/icons.php';
+include_once __DIR__ . '/helpers/csrf.php';
 
 createTable();
 
@@ -14,6 +16,10 @@ $isAdmin = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] =
 
 // Accion del menu de administracion: alternar publicado <-> borrador
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAdmin && ($_POST['action'] ?? '') === 'toggle_status') {
+    if (!csrfValidate()) {
+        http_response_code(403);
+        exit('Invalid CSRF token');
+    }
     $toggleId = (int)($_POST['post_id'] ?? 0);
     $togglePost = $toggleId > 0 ? getPostById($toggleId) : null;
     if ($togglePost) {
@@ -147,6 +153,7 @@ list($_status_updated, )   = t('msg_status_updated');
                     <a href="edit.php?id=<?php echo $post['id']; ?>" class="post-admin__edit"><?php echo finsec_icon('pencil', 14); ?> <?php echo htmlspecialchars($_btn_edit); ?></a>
                     <a href="delete.php?id=<?php echo $post['id']; ?>" onclick="return confirm('<?php echo htmlspecialchars($_confirm_delete, ENT_QUOTES); ?>');"><?php echo finsec_icon('trash', 14); ?> <?php echo htmlspecialchars($_btn_delete); ?></a>
                     <form method="POST" action=""<?php if (($post['status'] ?? 'published') === 'published'): ?> onsubmit="return confirm('<?php echo htmlspecialchars($_confirm_draft, ENT_QUOTES); ?>');"<?php endif; ?>>
+                        <?php echo csrfField(); ?>
                         <input type="hidden" name="action" value="toggle_status">
                         <input type="hidden" name="post_id" value="<?php echo $post['id']; ?>">
                         <button type="submit"><?php echo finsec_icon('eye', 14); ?> <?php echo htmlspecialchars(($post['status'] ?? 'published') === 'draft' ? $_btn_publish : $_btn_to_draft); ?></button>
