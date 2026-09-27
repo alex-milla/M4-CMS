@@ -165,18 +165,7 @@ $displayTitle = htmlspecialchars($siteTitle);
                             <?php echo htmlspecialchars($_published_on . ' ' . $post['created_at']); ?>
                             <span class="pin-badge"><?php echo finsec_icon('pin', 12); ?> <?php echo htmlspecialchars($_pinned_badge); ?></span>
                         </p>
-                        <div class="content">
-                            <?php
-                            $raw = preg_replace('/\r\n|\r/', "\n", htmlspecialchars($post['content'], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-                            $blocks = preg_split("/\n\n+/", $raw);
-                            // Excerpt: solo primer bloque en el listado
-                            $firstBlock = $blocks[0] ?? '';
-                            $excerpt = substr_count($firstBlock, "\n") > 0 ? trim($firstBlock) : $firstBlock;
-                            $excerptTruncated = strlen($excerpt) > 200;
-                            if ($excerptTruncated) $excerpt = substr($excerpt, 0, 200) . '...';
-                            echo nl2br($excerptTruncated || !function_exists('autoLinkUrls') ? $excerpt : autoLinkUrls($excerpt));
-                            ?>
-                        </div>
+                        <div class="content"><?php echo postExcerptHtml($post); ?></div>
                         <?php if (!empty($post['category']) || !empty($post['tags'])): ?>
                         <div class="meta-row">
                             <?php if (!empty($post['category'])): ?>
@@ -217,19 +206,7 @@ $displayTitle = htmlspecialchars($siteTitle);
                             <?php echo finsec_icon('calendar', 12); ?>
                             <?php echo htmlspecialchars($_published_on . ' ' . $post['created_at']); ?>
                         </p>
-                        <div class="content">
-                            <?php
-                            $raw = preg_replace('/\r\n|\r/', "\n", htmlspecialchars($post['content'], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-                            $blocks = preg_split("/\n\n+/", $raw);
-                            // Excerpt: solo primer bloque en el listado
-                            $firstBlock = $blocks[0] ?? '';
-                            $excerpt = substr_count($firstBlock, "\n") > 0 ? trim($firstBlock) : $firstBlock;
-                            $excerptTruncated = strlen($excerpt) > 200;
-                            if ($excerptTruncated) $excerpt = substr($excerpt, 0, 200) . '...';
-                            // Sin enlaces si el extracto quedo cortado (evita <a> partidos a medias)
-                            echo nl2br($excerptTruncated || !function_exists('autoLinkUrls') ? $excerpt : autoLinkUrls($excerpt));
-                            ?>
-                        </div>
+                        <div class="content"><?php echo postExcerptHtml($post); ?></div>
                         <?php if (!empty($post['category']) || !empty($post['tags'])): ?>
                         <div class="meta-row">
                             <?php if (!empty($post['category'])): ?>

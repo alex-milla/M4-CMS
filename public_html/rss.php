@@ -11,11 +11,8 @@ $siteTitle = $settings['site_title'] ?? 'M4 CMS';
 $siteTagline = $settings['site_tagline'] ?? 'Blog personal con PHP y SQLite';
 $posts = getPublishedPosts();
 
-// Determinar URL base
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$base = $protocol . '://' . $host . dirname($_SERVER['SCRIPT_NAME'] ?? '');
-$base = rtrim($base, '/\\');
+// URL base: setting 'base_url' si existe, o Host validado (siteBaseUrl)
+$base = siteBaseUrl();
 
 header('Content-Type: application/rss+xml; charset=utf-8');
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -36,7 +33,11 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             <?php if (!empty($post['category'])): ?>
             <category><?php echo htmlspecialchars($post['category']); ?></category>
             <?php endif; ?>
-            <description><![CDATA[<?php echo substr(strip_tags($post['content']), 0, 300); ?>]]></description>
+            <description><?php
+                $desc = strip_tags((string)$post['content']);
+                $desc = function_exists('mb_substr') ? mb_substr($desc, 0, 300) : substr($desc, 0, 300);
+                echo htmlspecialchars($desc, ENT_QUOTES | ENT_XML1, 'UTF-8');
+            ?></description>
         </item>
 <?php endforeach; ?>
     </channel>

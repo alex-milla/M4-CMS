@@ -31,6 +31,19 @@
     </FilesMatch>
 </IfModule>
 
+# Cabeceras de seguridad (mod_headers). setup.php y apply-admin-path.php NO se
+# bloquean aquí: setup.php es el instalador (se autoprotege con .setup_completed
+# y se autoelimina) y apply-admin-path.php exige sesión de admin + token de un
+# solo uso. Bloquearlos rompería la instalación y el cambio de ruta del panel.
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    Header always set Content-Security-Policy "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://www.dailymotion.com https://w.soundcloud.com; form-action 'self'; base-uri 'self'; frame-ancestors 'self'"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+</IfModule>
+
 RewriteEngine On
 
 # Página genérica para URLs inexistentes

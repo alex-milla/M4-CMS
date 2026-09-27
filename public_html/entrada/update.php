@@ -12,13 +12,9 @@
  * Nunca sobrescribe config.php, .env, admin_config.php ni la base de datos.
  */
 ob_start();
-include_once __DIR__ . '/../helpers/session.php';
+include_once __DIR__ . '/../helpers/auth.php';
 m4_session_start();
-
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    header('Location: login.php');
-    exit;
-}
+requireAdmin();
 
 @set_time_limit(300);
 @ignore_user_abort(true);

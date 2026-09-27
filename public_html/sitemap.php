@@ -5,10 +5,8 @@ include_once 'db/functions.php';
 
 createTable();
 
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$base = $protocol . '://' . $host . dirname($_SERVER['SCRIPT_NAME'] ?? '');
-$base = rtrim($base, '/\\');
+// URL base: setting 'base_url' si existe, o Host validado (siteBaseUrl)
+$base = siteBaseUrl();
 
 $posts = getPublishedPosts();
 

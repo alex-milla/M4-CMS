@@ -1,13 +1,9 @@
 <?php
 // Panel de gestión de bloques (widgets): enlaces de referencia, texto+enlace, embeds.
 // Módulo desactivado por defecto: se activa desde aquí (setting widgets_enabled).
-include_once __DIR__ . '/../helpers/session.php';
+include_once __DIR__ . '/../helpers/auth.php';
 m4_session_start();
-
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    header('Location: login.php');
-    exit;
-}
+requireAdmin();
 
 include_once '../config.php';
 include_once '../helpers/theme.php';

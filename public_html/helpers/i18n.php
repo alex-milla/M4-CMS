@@ -31,7 +31,9 @@ $lang = ($_SESSION['lang'] ?? 'es');
 
 function t($key) {
     global $lang;
-    $translations = [
+    static $translations = null;
+    if ($translations === null) {
+        $translations = [
         'nav_login' => ['en' => 'Login', 'es' => 'Entrar'],
         'nav_logout' => ['en' => 'Logout', 'es' => 'Cerrar sesión'],
         'nav_admin' => ['en' => 'Admin', 'es' => 'Admin'],
@@ -278,7 +280,8 @@ function t($key) {
         'err_creds_password' => ['en' => 'Current password is incorrect. Account changes were not saved.', 'es' => 'La contraseña actual es incorrecta. No se guardaron los cambios de cuenta.'],
         'lbl_admin_current_password' => ['en' => 'Current password (required to change user or password)', 'es' => 'Contraseña actual (obligatoria para cambiar usuario o contraseña)'],
         'err_login_rate_limited' => ['en' => 'Too many failed attempts. Please try again later.', 'es' => 'Demasiados intentos fallidos. Inténtalo de nuevo más tarde.'],
-    ];
+        ];
+    }
 
     return [$translations[$key][$lang] ?? $key, $lang];
 }

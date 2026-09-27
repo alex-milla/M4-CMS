@@ -180,17 +180,7 @@ list($_status_updated, )   = t('msg_status_updated');
                 </div>
                 <?php endif; ?>
 
-                <div class="content">
-                    <?php
-                    $raw = preg_replace('/\r\n|\r/', "\n", htmlspecialchars($post['content'], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-                    $blocks = preg_split("/\n\n+/", $raw);
-                    foreach ($blocks as $i => $block):
-                        if ($i > 0):
-            ?><div class="block-sep"></div><?php endif;
-                        echo nl2br(function_exists('autoLinkUrls') ? autoLinkUrls(trim($block)) : trim($block));
-                    endforeach;
-                    ?>
-                </div>
+                <div class="content"><?php echo postContentHtml($post['content']); ?></div>
                 </article>
 
                 <p style="margin-top: 24px;"><a href="index.php"><?php echo finsec_icon('arrow-left', 14); ?> <?php echo htmlspecialchars($_back); ?></a></p>

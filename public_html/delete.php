@@ -92,17 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <article class="post">
                 <h3><?php echo htmlspecialchars($post['title']); ?></h3>
                 <p class="date"><?php echo htmlspecialchars($post['created_at']); ?></p>
-                <div class="content">
-                    <?php
-                    $raw = preg_replace('/\r\n|\r/', "\n", htmlspecialchars($post['content'], ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-                    $blocks = preg_split("/\n\n+/", $raw);
-                    foreach ($blocks as $i => $block):
-                        if ($i > 0):
-            ?><div class="block-sep"></div><?php endif;
-                        echo nl2br(function_exists('autoLinkUrls') ? autoLinkUrls(trim($block)) : trim($block));
-                    endforeach;
-                    ?>
-                </div>
+                <div class="content"><?php echo postContentHtml($post['content']); ?></div>
             </article>
 
             <form method="POST" action="" style="margin-top: 20px;">

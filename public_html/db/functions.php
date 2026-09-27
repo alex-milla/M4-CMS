@@ -409,6 +409,24 @@ function postUrl($slug) {
     return '/' . rawurlencode($slug);
 }
 
+// URL base absoluta del sitio para feeds/sitemap.
+// Prioriza el setting 'base_url' (p. ej. https://midominio.com) y, si no existe,
+// reconstruye desde el Host validando su formato (evita Host header poisoning).
+function siteBaseUrl() {
+    $configured = function_exists('getSetting') ? @getSetting('base_url') : null;
+    if (is_string($configured) && $configured !== '' && preg_match('#^https?://#i', $configured)) {
+        return rtrim($configured, '/');
+    }
+
+    $protocol = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') ? 'https' : 'http';
+    $host = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
+    if (!preg_match('/^[A-Za-z0-9.\-]+(:\d+)?$/', $host)) {
+        $host = 'localhost';
+    }
+    $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+    return $protocol . '://' . $host . $dir;
+}
+
 // Hora local del servidor (mismo "frame" que los filtros de fecha SQL)
 function nowLocalString() {
     global $db;

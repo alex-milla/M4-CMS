@@ -27,3 +27,30 @@ function autoLinkUrls($text) {
         $text
     );
 }
+
+// Extracto para listados: primer bloque del contenido, truncado a $length.
+// Devuelve HTML seguro (contenido escapado + nl2br y autoenlace de URLs solo
+// si el extracto no queda cortado, para no partir un <a> a medias).
+function postExcerptHtml($post, $length = 200) {
+    $raw = preg_replace('/\r\n|\r/', "\n", htmlspecialchars((string)($post['content'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    $blocks = preg_split("/\n\n+/", $raw);
+    $firstBlock = $blocks[0] ?? '';
+    $excerpt = substr_count($firstBlock, "\n") > 0 ? trim($firstBlock) : $firstBlock;
+    $truncated = strlen($excerpt) > $length;
+    if ($truncated) $excerpt = substr($excerpt, 0, $length) . '...';
+    $useLinks = !$truncated && function_exists('autoLinkUrls');
+    return nl2br($useLinks ? autoLinkUrls($excerpt) : $excerpt);
+}
+
+// Contenido completo del post en la vista individual (bloques con separador).
+// Devuelve HTML seguro (escapado + nl2br + autoenlace).
+function postContentHtml($content) {
+    $raw = preg_replace('/\r\n|\r/', "\n", htmlspecialchars((string)$content, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    $blocks = preg_split("/\n\n+/", $raw);
+    $out = '';
+    foreach ($blocks as $i => $block) {
+        if ($i > 0) $out .= '<div class="block-sep"></div>';
+        $out .= nl2br(function_exists('autoLinkUrls') ? autoLinkUrls(trim($block)) : trim($block));
+    }
+    return $out;
+}

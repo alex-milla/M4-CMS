@@ -1,12 +1,8 @@
 <?php
 // Panel de gestion de publicaciones
-include_once __DIR__ . '/../helpers/session.php';
+include_once __DIR__ . '/../helpers/auth.php';
 m4_session_start();
-
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    header('Location: login.php');
-    exit;
-}
+requireAdmin();
 
 include_once '../config.php';
 include_once '../helpers/theme.php';

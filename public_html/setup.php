@@ -3,9 +3,12 @@
 require_once 'config.php';
 require_once 'db/connect.php';
 
-// Verificar si ya está configurado
+// Verificar si ya está configurado: no permitir reinstalación si existe
+// la marca de setup o credenciales previas (.env / admin_config.php).
 $setup_file = __DIR__ . '/.setup_completed';
-if (file_exists($setup_file)) {
+$env_file   = __DIR__ . '/.env';
+$cfg_file   = __DIR__ . '/admin_config.php';
+if (file_exists($setup_file) || file_exists($env_file) || file_exists($cfg_file)) {
     header('Location: index.php');
     exit;
 }
