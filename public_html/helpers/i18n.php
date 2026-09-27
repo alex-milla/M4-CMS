@@ -272,6 +272,11 @@ function t($key) {
         'log_post_pinned' => ['en' => 'Post pinned', 'es' => 'Publicación anclada'],
         'log_post_unpinned' => ['en' => 'Post unpinned', 'es' => 'Publicación desanclada'],
         'log_post_pin_reordered' => ['en' => 'Pinned posts reordered', 'es' => 'Anclados reordenados'],
+
+        // --- Seguridad (CSRF / credenciales) ---
+        'err_csrf' => ['en' => 'Invalid session token. Reload the page and try again.', 'es' => 'Token de sesión no válido. Recarga la página e inténtalo de nuevo.'],
+        'err_creds_password' => ['en' => 'Current password is incorrect. Account changes were not saved.', 'es' => 'La contraseña actual es incorrecta. No se guardaron los cambios de cuenta.'],
+        'lbl_admin_current_password' => ['en' => 'Current password (required to change user or password)', 'es' => 'Contraseña actual (obligatoria para cambiar usuario o contraseña)'],
     ];
 
     return [$translations[$key][$lang] ?? $key, $lang];

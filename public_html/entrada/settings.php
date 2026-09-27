@@ -12,6 +12,7 @@ include_once '../db/functions.php';
 include_once '../helpers/theme.php';
 include_once '../helpers/i18n.php';
 include_once '../helpers/icons.php';
+include_once '../helpers/csrf.php';
 
 // Asegurar que las tablas existen antes de leer/escribir settings
 createTable();
@@ -54,6 +55,9 @@ list($err_path_reserved, )  = t('err_admin_path_reserved');
 list($err_path_exists, )    = t('err_admin_path_exists');
 list($err_path_password, ) = t('err_admin_path_password');
 list($nav_widgets, )   = t('nav_widgets');
+list($err_csrf, )          = t('err_csrf');
+list($err_creds_password, ) = t('err_creds_password');
+list($lbl_admin_curpass, ) = t('lbl_admin_current_password');
 
 $class = 'theme-' . htmlspecialchars($theme);
 
@@ -62,60 +66,84 @@ $message_txt = '';
 $error_txt   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        if (!empty($_POST['site_title'])) {
-            saveSetting('site_title', trim($_POST['site_title']));
+    if (!csrfValidate()) {
+        // Token CSRF ausente o inválido: no se procesa ninguna escritura.
+        $error_txt = $err_csrf;
+        logAdminEvent('settings_saved', 'rejected: invalid csrf');
+    } else {
+        try {
+            if (!empty($_POST['site_title'])) {
+                saveSetting('site_title', trim($_POST['site_title']));
+            }
+
+            if (!empty($_POST['site_tagline'])) {
+                saveSetting('site_tagline', trim($_POST['site_tagline']));
+            }
+
+            // Cambios de cuenta admin (usuario o contraseña): exigen la
+            // contraseña actual. Evita que un CSRF cambie las credenciales.
+            $currentStoredUser = (string)(getSetting('admin_user') ?? '');
+            $newUser = trim((string)($_POST['admin_user'] ?? ''));
+            $newPass = (string)($_POST['admin_pass'] ?? '');
+            $credsChange = ($newPass !== '') || ($newUser !== '' && $newUser !== $currentStoredUser);
+
+            if ($credsChange) {
+                $currentPass = (string)($_POST['admin_current_password'] ?? '');
+                if ($currentPass === ''
+                    || !verifyAdminCredential($_SESSION['admin_user'] ?? '', $currentPass)) {
+                    $error_txt = $err_creds_password;
+                    logAdminEvent('settings_saved', 'rejected: wrong current password');
+                } else {
+                    if ($newUser !== '') {
+                        saveSetting('admin_user', $newUser);
+                        $_SESSION['admin_user'] = $newUser;
+                    }
+                    if ($newPass !== '') {
+                        $hashed = password_hash($newPass, PASSWORD_DEFAULT);
+                        saveSetting('admin_password', $hashed);
+                    }
+                    $message_txt = $msg_saved;
+                    logAdminEvent('settings_saved', $_SESSION['admin_user'] ?? 'unknown');
+                }
+            } else {
+                $message_txt = $msg_saved;
+                logAdminEvent('settings_saved', $_SESSION['admin_user'] ?? 'unknown');
+            }
+        } catch (Exception $e) {
+            $error_txt = $e->getMessage();
         }
 
-        if (!empty($_POST['site_tagline'])) {
-            saveSetting('site_tagline', trim($_POST['site_tagline']));
-        }
-
-        if (!empty($_POST['admin_user'])) {
-            saveSetting('admin_user', trim($_POST['admin_user']));
-        }
-
-        if (!empty($_POST['admin_pass'])) {
-            $hashed = password_hash(trim($_POST['admin_pass']), PASSWORD_DEFAULT);
-            saveSetting('admin_password', $hashed);
-        }
-
-        $message_txt = $msg_saved;
-        logAdminEvent('settings_saved', $_SESSION['admin_user'] ?? 'unknown');
-    } catch (Exception $e) {
-        $error_txt = $e->getMessage();
-    }
-
-    // --- Cambio de ruta del panel admin (rename físico de carpeta) ---
-    // Seguridad: primero rename en disco; la DB solo se toca si tuvo éxito.
-    $newPath = trim($_POST['admin_path'] ?? '');
-    $currentSlug = basename(__DIR__);
-    if ($newPath !== '' && $newPath !== $currentSlug) {
-        $cmsRoot = dirname(__DIR__);
-        $reserved = ['post', 'page', 'feed', 'sitemap.xml'];
-        if (!preg_match('/^[a-z0-9][a-z0-9\-]{1,29}$/', $newPath)) {
-            $error_txt = $err_path_format;
-        } elseif (in_array($newPath, $reserved, true)) {
-            $error_txt = $err_path_reserved;
-        } elseif (file_exists($cmsRoot . '/' . $newPath)) {
-            $error_txt = $err_path_exists;
-        } elseif (empty($_POST['current_password'])
-                 || !verifyAdminCredential($_SESSION['admin_user'] ?? '', $_POST['current_password'])) {
-            $error_txt = $err_path_password;
-            logAdminEvent('admin_path_change_fail', 'wrong password');
-        } else {
-            // No renombramos aquí: este script vive dentro de la carpeta que se va a
-            // renombrar y algunos SAPI bloquean eso. Se delega en apply-admin-path.php
-            // (raíz del CMS) mediante una solicitud pendiente con token de un solo uso.
-            $token = bin2hex(random_bytes(16));
-            @saveSetting('admin_path_pending', json_encode([
-                'slug'  => $newPath,
-                'time'  => time(),
-                'token' => $token,
-            ]));
-            session_write_close();
-            header('Location: ../apply-admin-path.php?token=' . $token);
-            exit;
+        // --- Cambio de ruta del panel admin (rename físico de carpeta) ---
+        // Seguridad: primero rename en disco; la DB solo se toca si tuvo éxito.
+        $newPath = trim($_POST['admin_path'] ?? '');
+        $currentSlug = basename(__DIR__);
+        if ($newPath !== '' && $newPath !== $currentSlug) {
+            $cmsRoot = dirname(__DIR__);
+            $reserved = ['post', 'page', 'feed', 'sitemap.xml'];
+            if (!preg_match('/^[a-z0-9][a-z0-9\-]{1,29}$/', $newPath)) {
+                $error_txt = $err_path_format;
+            } elseif (in_array($newPath, $reserved, true)) {
+                $error_txt = $err_path_reserved;
+            } elseif (file_exists($cmsRoot . '/' . $newPath)) {
+                $error_txt = $err_path_exists;
+            } elseif (empty($_POST['current_password'])
+                     || !verifyAdminCredential($_SESSION['admin_user'] ?? '', $_POST['current_password'])) {
+                $error_txt = $err_path_password;
+                logAdminEvent('admin_path_change_fail', 'wrong password');
+            } else {
+                // No renombramos aquí: este script vive dentro de la carpeta que se va a
+                // renombrar y algunos SAPI bloquean eso. Se delega en apply-admin-path.php
+                // (raíz del CMS) mediante una solicitud pendiente con token de un solo uso.
+                $token = bin2hex(random_bytes(16));
+                @saveSetting('admin_path_pending', json_encode([
+                    'slug'  => $newPath,
+                    'time'  => time(),
+                    'token' => $token,
+                ]));
+                session_write_close();
+                header('Location: ../apply-admin-path.php?token=' . $token);
+                exit;
+            }
         }
     }
 }
@@ -257,6 +285,7 @@ try {
             </div>
 
             <form method="POST" action="">
+                <?php echo csrfField(); ?>
                 <!-- Datos del sitio -->
                 <div class="admin-card">
                     <h3><?php echo finsec_icon('folder', 16); ?> <?php echo htmlspecialchars($lbl_sitedata); ?></h3>
@@ -284,6 +313,11 @@ try {
                     <div class="admin-form-group">
                         <label for="admin_pass"><?php echo htmlspecialchars($lbl_newpass); ?></label>
                         <input type="password" id="admin_pass" name="admin_pass" autocomplete="new-password" style="max-width:480px;">
+                    </div>
+
+                    <div class="admin-form-group">
+                        <label for="admin_current_password"><?php echo htmlspecialchars($lbl_admin_curpass); ?></label>
+                        <input type="password" id="admin_current_password" name="admin_current_password" autocomplete="current-password" style="max-width:480px;">
                     </div>
                 </div>
 

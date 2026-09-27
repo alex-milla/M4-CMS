@@ -3,6 +3,13 @@
 include_once 'config.php';
 include_once 'db/functions.php';
 session_start();
+
+// Solo administradores autenticados pueden eliminar publicaciones
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header('Location: index.php');
+    exit;
+}
+
 include_once 'helpers/theme.php';
 include_once 'helpers/i18n.php';
 include_once 'helpers/content.php';
