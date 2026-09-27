@@ -346,6 +346,11 @@ function updatePost($id, $title, $content, $status = 'published', $slug = '', $c
     $sql = "UPDATE posts SET title = ?, content = ?, status = ?, slug = ?, category = ?";
     $params = [$title, $content, $status, $slug, $category];
 
+    // Un post en borrador no queda anclado (no se renderiza pero ocuparía slot)
+    if ($status !== 'published') {
+        $sql .= ", pinned_order = 0";
+    }
+
     if ($tags !== null) {
         $sql .= ", tags = ?";
         $params[] = normalizeTags($tags);

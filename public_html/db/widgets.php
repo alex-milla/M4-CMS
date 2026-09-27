@@ -81,3 +81,39 @@ function deleteWidget($id) {
     $stmt = $db->prepare("DELETE FROM widgets WHERE id = ?");
     return $stmt->execute([$id]);
 }
+
+// Mover un bloque arriba (-1) o abajo (+1) intercambiando su `position` con la del vecino
+function moveWidget($id, $delta) {
+    global $db;
+    $id = (int)$id;
+    $delta = (int)$delta;
+    if ($id <= 0 || !in_array($delta, [-1, 1], true)) return false;
+
+    $cur = $db->prepare("SELECT position FROM widgets WHERE id = ?");
+    $cur->execute([$id]);
+    $pos = $cur->fetchColumn();
+    if ($pos === false) return false;
+    $pos = (int)$pos;
+
+    if ($delta < 0) {
+        $q = $db->prepare("SELECT id, position FROM widgets WHERE position < ? OR (position = ? AND id < ?) ORDER BY position DESC, id DESC LIMIT 1");
+        $q->execute([$pos, $pos, $id]);
+    } else {
+        $q = $db->prepare("SELECT id, position FROM widgets WHERE position > ? OR (position = ? AND id > ?) ORDER BY position ASC, id ASC LIMIT 1");
+        $q->execute([$pos, $pos, $id]);
+    }
+    $neighbor = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$neighbor) return false; // ya está en el extremo
+
+    try {
+        $db->beginTransaction();
+        $upd = $db->prepare("UPDATE widgets SET position = ? WHERE id = ?");
+        $upd->execute([(int)$neighbor['position'], $id]);
+        $upd->execute([$pos, (int)$neighbor['id']]);
+        $db->commit();
+        return true;
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        return false;
+    }
+}

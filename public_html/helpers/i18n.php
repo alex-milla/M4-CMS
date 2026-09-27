@@ -237,7 +237,7 @@ function t($key) {
         'page_widgets_title' => ['en' => 'Blocks', 'es' => 'Bloques'],
         'lbl_widget_content' => ['en' => 'Content', 'es' => 'Contenido'],
         'ph_widget_content' => ['en' => 'Write text, paste a YouTube/Vimeo URL, or use basic HTML...', 'es' => 'Escribe texto, pega una URL de YouTube/Vimeo o usa HTML básico...'],
-        'help_widget_content' => ['en' => 'Auto-detected: a YouTube/Vimeo/Dailymotion/SoundCloud URL is embedded; basic HTML (<b>, <a>, <ul>...) is allowed; plain text keeps line breaks and auto-links URLs.', 'es' => 'Detección automática: una URL de YouTube/Vimeo/Dailymotion/SoundCloud se muestra embebida; se permite HTML básico (<b>, <a>, <ul>...); el texto plano conserva saltos de línea y autoenlaza URLs.'],
+        'help_widget_content' => ['en' => 'Auto-detected: a YouTube/Vimeo/Dailymotion/SoundCloud/Spotify URL is embedded; basic HTML (<b>, <a>, <ul>...) is allowed; plain text keeps line breaks and auto-links URLs.', 'es' => 'Detección automática: una URL de YouTube/Vimeo/Dailymotion/SoundCloud/Spotify se muestra embebida; se permite HTML básico (<b>, <a>, <ul>...); el texto plano conserva saltos de línea y autoenlaza URLs.'],
         'lbl_widget_position' => ['en' => 'Order (lower goes first)', 'es' => 'Orden (menor primero)'],
         'wdg_module' => ['en' => 'Module', 'es' => 'Módulo'],
         'wdg_module_help' => ['en' => 'Blocks appear on the homepage, above the post list. Disabled by default.', 'es' => 'Los bloques aparecen en la portada, encima del listado de posts. Desactivado por defecto.'],

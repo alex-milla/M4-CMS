@@ -66,6 +66,17 @@ function widgetEmbedUrl($url) {
         return 'https://w.soundcloud.com/player/?url=' . rawurlencode($url);
     }
 
+    // Spotify: open.spotify.com/(track|album|playlist|episode|show|artist)/ID
+    if ($host === 'open.spotify.com' || $host === 'spotify.com' || $host === 'www.spotify.com') {
+        if (preg_match('#^/embed/(track|album|playlist|episode|show|artist)/([A-Za-z0-9]+)#', (string)$path, $m)) {
+            return 'https://open.spotify.com/embed/' . $m[1] . '/' . $m[2];
+        }
+        if (preg_match('#^/(track|album|playlist|episode|show|artist)/([A-Za-z0-9]+)#', (string)$path, $m)) {
+            return 'https://open.spotify.com/embed/' . $m[1] . '/' . $m[2];
+        }
+        return null;
+    }
+
     return null;
 }
 

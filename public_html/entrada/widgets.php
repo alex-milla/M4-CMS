@@ -130,6 +130,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_id'])) {
     exit;
 }
 
+// Reordenar bloques (subir/bajar)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['move_id'], $_POST['dir'])) {
+    $id = (int)$_POST['move_id'];
+    $dir = ($_POST['dir'] === 'down') ? 1 : -1;
+    moveWidget($id, $dir);
+    header('Location: widgets.php');
+    exit;
+}
+
 $moduleEnabled = widgetsModuleEnabled();
 $widgets = getAllWidgets();
 
@@ -266,6 +275,18 @@ $widget_count = countWidgets();
                                 <?php endif; ?>
                             </td>
                             <td>
+                                <form method="POST" action="" style="display:inline;">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="move_id" value="<?php echo (int)$w['id']; ?>">
+                                    <input type="hidden" name="dir" value="up">
+                                    <button type="submit" class="action-btn" title="<?php echo htmlspecialchars(t('btn_move_up')[0]); ?>"><?php echo finsec_icon('arrow-up', 14); ?></button>
+                                </form>
+                                <form method="POST" action="" style="display:inline;">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="move_id" value="<?php echo (int)$w['id']; ?>">
+                                    <input type="hidden" name="dir" value="down">
+                                    <button type="submit" class="action-btn" title="<?php echo htmlspecialchars(t('btn_move_down')[0]); ?>"><?php echo finsec_icon('arrow-down', 14); ?></button>
+                                </form>
                                 <form method="POST" action="" style="display:inline;">
                                     <?php echo csrfField(); ?>
                                     <input type="hidden" name="toggle_id" value="<?php echo (int)$w['id']; ?>">
