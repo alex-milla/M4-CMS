@@ -40,9 +40,13 @@ $css  = ($base === '' ? '' : $base) . '/assets/finsec.css';
 // siga funcionando aunque falten los ficheros o la BBDD no esté disponible.
 @include_once __DIR__ . '/db/analytics.php';
 @include_once __DIR__ . '/helpers/analytics.php';
+@include_once __DIR__ . '/helpers/system.php';
 if (function_exists('analytics_track')) {
     @analytics_track(['status' => $status]);
 }
+
+// Versión de la aplicación (cache busting del CSS)
+$appVersion = function_exists('app_version') ? app_version() : '0';
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $lang; ?>">
@@ -50,7 +54,7 @@ if (function_exists('analytics_track')) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $t['title']; ?></title>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>?v=<?php echo rawurlencode($appVersion); ?>">
     <?php if (function_exists('renderHeadExtras')) { @renderHeadExtras(); } ?>
 </head>
 <body class="theme-<?php echo $theme404; ?>">

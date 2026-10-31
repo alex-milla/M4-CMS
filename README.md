@@ -100,6 +100,8 @@ The admin panel includes a lightweight, self-hosted web analytics module (**Stat
   - *Visit log*: every session with its date, device, browser, OS, entry referrer and the sequence of pages viewed, plus a link to the **visitor profile**,
   - reports for pages, entry pages, searched keywords, referrers, devices, browsers, operating systems, visits per hour and response codes.
 
+Technical requests (`/favicon.ico`, `/robots.txt`, `apple-touch-icon`, `/.well-known/…`) are **not** tracked: they are browser housekeeping, not visits. The panel and site stylesheets are requested with a `?v=<version>` parameter, so a new release always invalidates the browser cache and the interface never shows an outdated stylesheet.
+
 ## Themes
 
 Two themes are available: `finsec` (light, default) and `finsec-dark` (dark). Switch between them from the header toggle; the choice is persisted per session and in the database.

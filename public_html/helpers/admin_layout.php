@@ -5,6 +5,7 @@ include_once __DIR__ . '/session.php';
 include_once __DIR__ . '/i18n.php';
 include_once __DIR__ . '/icons.php';
 include_once __DIR__ . '/csrf.php';
+include_once __DIR__ . '/system.php';
 
 // Cabecera + sidebar + apertura del contenedor principal.
 // Opciones: title, logo, active (index|posts|widgets|settings|logs|update),
@@ -50,7 +51,7 @@ function adminLayoutHead(array $opts = []) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($title); ?></title>
-    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin.css?v=<?php echo rawurlencode(app_version()); ?>">
 </head>
 <body class="theme-<?php echo htmlspecialchars($theme); ?>">
     <!-- Sidebar -->

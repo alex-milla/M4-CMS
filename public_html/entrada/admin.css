@@ -1043,10 +1043,8 @@ body.theme-finsec-dark .badge.danger { background: rgba(127, 29, 29, 0.25); colo
 
 .stat-period {
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 10px;
     margin-bottom: 20px;
 }
 .stat-period__chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1069,10 +1067,15 @@ body.theme-finsec-dark .badge.danger { background: rgba(127, 29, 29, 0.25); colo
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
-    font-size: 0.75rem;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    font-size: 0.8125rem;
     color: var(--text-2);
 }
+.stat-period__custom label { display: inline-flex; align-items: center; gap: 6px; }
 .stat-period__custom input[type="date"] {
     padding: 4px 8px;
     font-size: 0.8125rem;
@@ -1179,7 +1182,21 @@ body.theme-finsec-dark .badge.danger { background: rgba(127, 29, 29, 0.25); colo
 }
 .visit-action__time { font-size: 0.75rem; color: var(--text-3); }
 .visit-action__path { color: var(--text-1); }
+.visit-action__count {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--text-2);
+    background: var(--muted);
+    border-radius: 999px;
+    padding: 1px 7px;
+}
 .visit-action__search { color: var(--brand-500); }
+.visit-action--more {
+    color: var(--text-3);
+    font-size: 0.75rem;
+    font-style: italic;
+    border-left-color: transparent;
+}
 .visit-card__foot { margin-top: 8px; }
 
 /* Barras por hora */

@@ -179,6 +179,26 @@ function stats_metric_row($label, $value, $extra = '') {
         . '<span class="metric-value">' . $value . ($extra !== '' ? ' ' . $extra : '') . '</span></div>';
 }
 
+/** Agrupa acciones consecutivas repetidas y limita las que se muestran. */
+function stats_compact_actions($actions, $limit = 10) {
+    $out = [];
+    foreach ((array)$actions as $a) {
+        $n = count($out);
+        if ($n > 0
+            && $out[$n - 1]['path'] === $a['path']
+            && (int)$out[$n - 1]['status'] === (int)$a['status']) {
+            $out[$n - 1]['count']++;
+            $out[$n - 1]['at'] = $a['at'];
+        } else {
+            $a['count'] = 1;
+            $out[] = $a;
+        }
+    }
+    $total = count($out);
+    $hidden = max(0, $total - $limit);
+    return ['items' => array_slice($out, 0, $limit), 'hidden' => $hidden];
+}
+
 /** Barra de ranking con etiqueta y valor. */
 function stats_bar_row($label, $value, $max, $mono = false) {
     $pct = ($max > 0) ? (int)round(($value / $max) * 100) : 0;
@@ -536,10 +556,16 @@ foreach ($cards as $card):
                                 </span>
                             </div>
                             <div class="visit-card__actions">
-<?php foreach ($visit['actions_list'] as $action): ?>
+<?php
+$compact = stats_compact_actions($visit['actions_list'], 10);
+foreach ($compact['items'] as $action):
+?>
                                 <div class="visit-action">
                                     <span class="visit-action__time mono"><?php echo htmlspecialchars(substr((string)$action['at'], 11, 8)); ?></span>
                                     <span class="visit-action__path mono"><?php echo htmlspecialchars($action['path']); ?></span>
+<?php if ((int)$action['count'] > 1): ?>
+                                    <span class="visit-action__count">&times;<?php echo (int)$action['count']; ?></span>
+<?php endif; ?>
 <?php if ($action['search'] !== ''): ?>
                                     <span class="visit-action__search">“<?php echo htmlspecialchars($action['search']); ?>”</span>
 <?php endif; ?>
@@ -548,6 +574,11 @@ foreach ($cards as $card):
 <?php endif; ?>
                                 </div>
 <?php endforeach; ?>
+<?php if ($compact['hidden'] > 0): ?>
+                                <div class="visit-action visit-action--more">
+                                    +<?php echo (int)$compact['hidden']; ?> <?php echo htmlspecialchars(strtolower($st_actions)); ?>
+                                </div>
+<?php endif; ?>
                             </div>
 <?php if (!empty($visit['visitor_id'])): ?>
                             <div class="visit-card__foot">

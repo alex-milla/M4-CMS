@@ -295,6 +295,35 @@ function analytics_visit_exists($pdo, $visitId) {
     }
 }
 
+// Rutas que NO son páginas del sitio: peticiones técnicas del navegador,
+// bots o herramientas. No se registran como visitas ni como acciones.
+//   /favicon.ico, /robots.txt, /apple-touch-icon*.png, /.well-known/...
+function analytics_is_page_path($path) {
+    $p = strtolower(trim((string)$path));
+    if ($p === '') return false;
+
+    $skip = [
+        '/favicon.ico', '/favicon.png', '/favicon.svg',
+        '/apple-touch-icon.png', '/apple-touch-icon-precomposed.png',
+        '/robots.txt', '/humans.txt', '/ads.txt', '/app-ads.txt',
+        '/browserconfig.xml', '/manifest.json', '/site.webmanifest',
+    ];
+    if (in_array($p, $skip, true)) return false;
+    if (preg_match('#^/apple-touch-icon[\w\-]*\.png$#', $p)) return false;
+    if (strpos($p, '/.well-known/') === 0) return false;
+    return true;
+}
+
+// Filtro SQL equivalente: excluye las rutas técnicas también de los datos
+// ya registrados en instalaciones anteriores.
+function analytics_page_filter_sql() {
+    return "path NOT IN ('/favicon.ico','/favicon.png','/favicon.svg',"
+        . "'/apple-touch-icon.png','/apple-touch-icon-precomposed.png',"
+        . "'/robots.txt','/humans.txt','/ads.txt','/app-ads.txt',"
+        . "'/browserconfig.xml','/manifest.json','/site.webmanifest')"
+        . " AND path NOT LIKE '/apple-touch-icon%.png'";
+}
+
 // Registra una página vista. Opciones: path, status, search.
 function analytics_track(array $opts = []) {
     try {
@@ -308,6 +337,9 @@ function analytics_track(array $opts = []) {
         if ($path === '') $path = '/';
         $path = substr($path, 0, 255);
         $status = isset($opts['status']) ? (int)$opts['status'] : 200;
+
+        // Las peticiones técnicas (favicon, robots.txt...) no son páginas
+        if (!analytics_is_page_path($path)) return false;
 
         $search = isset($opts['search']) ? trim((string)$opts['search']) : '';
         if ($search !== '') $search = substr($search, 0, 120);
@@ -376,7 +408,8 @@ function analytics_today_date($pdo) {
 // WITH dentro de un subquery entre paréntesis).
 function analytics_visits_cte($start, $end) {
     return "WITH base AS (
-                SELECT * FROM pageviews WHERE date(created_at) BETWEEN ? AND ?
+                SELECT * FROM pageviews
+                WHERE date(created_at) BETWEEN ? AND ? AND (" . analytics_page_filter_sql() . ")
             ),
             v AS (
                 SELECT visit_id, MIN(id) AS first_id, MAX(created_at) AS last_at, COUNT(*) AS actions
@@ -425,7 +458,7 @@ function analytics_core_metrics($pdo, $start, $end) {
             "SELECT COUNT(DISTINCT path) AS unique_pages,
                     SUM(CASE WHEN search_term IS NOT NULL AND search_term <> '' THEN 1 ELSE 0 END) AS searches,
                     COUNT(DISTINCT CASE WHEN search_term IS NOT NULL AND search_term <> '' THEN search_term END) AS keywords
-             FROM pageviews WHERE date(created_at) BETWEEN ? AND ?", [$start, $end]);
+             FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND (" . analytics_page_filter_sql() . ")", [$start, $end]);
         if (!empty($rows[0])) {
             $m['unique_pageviews'] = (int)$rows[0]['unique_pages'];
             $m['searches']         = (int)$rows[0]['searches'];
@@ -470,6 +503,7 @@ function analytics_stats($start, $end = null) {
         $pdo = analytics_db();
         if (!$pdo) return $stats;
         $stats['available'] = true;
+        $pf = analytics_page_filter_sql();   // excluye rutas técnicas (favicon, robots.txt...)
 
         // --- Resumen ---
         $core = analytics_core_metrics($pdo, $start, $end);
@@ -491,7 +525,7 @@ function analytics_stats($start, $end = null) {
                     COUNT(*) AS actions,
                     COUNT(DISTINCT visit_id) AS visits,
                     COUNT(DISTINCT visitor_id) AS visitors
-             FROM pageviews WHERE date(created_at) BETWEEN ? AND ?
+             FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND ($pf)
              GROUP BY d ORDER BY d", [$start, $end]);
         $byDay = [];
         foreach ($rows as $row) {
@@ -514,7 +548,7 @@ function analytics_stats($start, $end = null) {
         $stats['hourly'] = array_fill(0, 24, 0);
         $rows = analytics_query($pdo,
             "SELECT strftime('%H', created_at) AS h, COUNT(DISTINCT visit_id) AS visits
-             FROM pageviews WHERE date(created_at) BETWEEN ? AND ?
+             FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND ($pf)
              GROUP BY h ORDER BY h", [$start, $end]);
         foreach ($rows as $row) {
             $h = (int)$row['h'];
@@ -545,7 +579,7 @@ function analytics_stats($start, $end = null) {
         // --- Páginas más vistas ---
         $rows = analytics_query($pdo,
             "SELECT path, COUNT(*) AS views, COUNT(DISTINCT visit_id) AS visits, COUNT(DISTINCT visitor_id) AS visitors
-             FROM pageviews WHERE date(created_at) BETWEEN ? AND ?
+             FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND ($pf)
              GROUP BY path ORDER BY views DESC LIMIT 25", [$start, $end]);
         foreach ($rows as $row) {
             $stats['pages'][] = [
@@ -559,8 +593,8 @@ function analytics_stats($start, $end = null) {
         // --- Páginas de entrada ---
         $rows = analytics_query($pdo,
             "SELECT path, COUNT(*) AS entries FROM pageviews
-             WHERE date(created_at) BETWEEN ? AND ?
-               AND id IN (SELECT MIN(id) FROM pageviews WHERE date(created_at) BETWEEN ? AND ? GROUP BY visit_id)
+             WHERE date(created_at) BETWEEN ? AND ? AND ($pf)
+               AND id IN (SELECT MIN(id) FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND ($pf) GROUP BY visit_id)
              GROUP BY path ORDER BY entries DESC LIMIT 25", [$start, $end, $start, $end]);
         foreach ($rows as $row) {
             $stats['entry_pages'][] = ['path' => (string)$row['path'], 'visits' => (int)$row['entries']];
@@ -570,7 +604,7 @@ function analytics_stats($start, $end = null) {
         $rows = analytics_query($pdo,
             "SELECT search_term AS term, COUNT(*) AS count, COUNT(DISTINCT visitor_id) AS visitors
              FROM pageviews
-             WHERE date(created_at) BETWEEN ? AND ? AND search_term IS NOT NULL AND search_term <> ''
+             WHERE date(created_at) BETWEEN ? AND ? AND ($pf) AND search_term IS NOT NULL AND search_term <> ''
              GROUP BY search_term ORDER BY count DESC LIMIT 25", [$start, $end]);
         foreach ($rows as $row) {
             $stats['keywords'][] = ['term' => (string)$row['term'], 'count' => (int)$row['count'], 'visitors' => (int)$row['visitors']];
@@ -580,7 +614,7 @@ function analytics_stats($start, $end = null) {
         $rows = analytics_query($pdo,
             "SELECT referrer, referrer_host, referrer_type, COUNT(DISTINCT visit_id) AS visits
              FROM pageviews
-             WHERE date(created_at) BETWEEN ? AND ? AND referrer IS NOT NULL AND referrer <> ''
+             WHERE date(created_at) BETWEEN ? AND ? AND ($pf) AND referrer IS NOT NULL AND referrer <> ''
              GROUP BY referrer ORDER BY visits DESC LIMIT 25", [$start, $end]);
         foreach ($rows as $row) {
             $stats['referrers'][] = [
@@ -594,7 +628,7 @@ function analytics_stats($start, $end = null) {
         // --- Tipos de referente (para las barras) ---
         $rows = analytics_query($pdo,
             "SELECT referrer_type, COUNT(DISTINCT visit_id) AS visits
-             FROM pageviews WHERE date(created_at) BETWEEN ? AND ?
+             FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND ($pf)
              GROUP BY referrer_type", [$start, $end]);
         foreach ($rows as $row) {
             $stats['referrer_types'][(string)$row['referrer_type']] = (int)$row['visits'];
@@ -607,7 +641,7 @@ function analytics_stats($start, $end = null) {
             list($key, $col) = $pair;
             $rows = analytics_query($pdo,
                 "SELECT $col AS v, COUNT(DISTINCT visit_id) AS visits, COUNT(DISTINCT visitor_id) AS visitors
-                 FROM pageviews WHERE date(created_at) BETWEEN ? AND ?
+                 FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND ($pf)
                  GROUP BY $col ORDER BY visits DESC", [$start, $end]);
             foreach ($rows as $row) {
                 $stats[$key][(string)$row['v']] = ['visits' => (int)$row['visits'], 'visitors' => (int)$row['visitors']];
@@ -617,7 +651,7 @@ function analytics_stats($start, $end = null) {
         // --- Códigos de respuesta ---
         $rows = analytics_query($pdo,
             "SELECT status, COUNT(*) AS views
-             FROM pageviews WHERE date(created_at) BETWEEN ? AND ?
+             FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND ($pf)
              GROUP BY status ORDER BY views DESC", [$start, $end]);
         foreach ($rows as $row) {
             $stats['statuses'][(string)$row['status']] = (int)$row['views'];
@@ -632,7 +666,7 @@ function analytics_stats($start, $end = null) {
                 COUNT(DISTINCT CASE WHEN created_at >= datetime('now','localtime','-30 minutes') THEN visit_id END) AS m30,
                 COUNT(DISTINCT CASE WHEN created_at >= datetime('now','localtime','-1 day') THEN visit_id END) AS d1,
                 MAX(created_at) AS last_hit
-             FROM pageviews WHERE date(created_at) BETWEEN ? AND ?", [$start, $end]);
+             FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND ($pf)", [$start, $end]);
         $stats['realtime'] = [
             'last_30min' => !empty($rows[0]) ? (int)$rows[0]['m30'] : 0,
             'last_24h'   => !empty($rows[0]) ? (int)$rows[0]['d1'] : 0,
@@ -664,8 +698,8 @@ function analytics_visit_log($pdo, $start, $end, $limit = 50) {
         $actions = [];
         $rows2 = analytics_query($pdo,
             "SELECT visit_id, path, status, created_at, search_term FROM pageviews
-             WHERE date(created_at) BETWEEN ? AND ? AND visit_id IN (
-                 SELECT visit_id FROM pageviews WHERE date(created_at) BETWEEN ? AND ?
+             WHERE date(created_at) BETWEEN ? AND ? AND (" . analytics_page_filter_sql() . ") AND visit_id IN (
+                 SELECT visit_id FROM pageviews WHERE date(created_at) BETWEEN ? AND ? AND (" . analytics_page_filter_sql() . ")
                  GROUP BY visit_id ORDER BY MIN(created_at) DESC LIMIT $limit
              )
              ORDER BY created_at ASC", [$start, $end, $start, $end]);

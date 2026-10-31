@@ -23,6 +23,23 @@ function systemDbPath() {
     return dirname(__DIR__) . '/db/cms.db';
 }
 
+// Versión instalada de la aplicación (fichero VERSION).
+// Se usa para el "cache busting" de los CSS: ?v=<versión> en cada release,
+// de modo que el navegador nunca sirve una hoja de estilos antigua.
+function app_version() {
+    static $version = null;
+    if ($version !== null) return $version;
+    $version = '0';
+    try {
+        $file = dirname(__DIR__) . '/VERSION';
+        if (is_file($file)) {
+            $v = trim((string)@file_get_contents($file));
+            if ($v !== '') $version = $v;
+        }
+    } catch (\Throwable $e) { /* usa el valor por defecto */ }
+    return $version;
+}
+
 // Tamaño de un directorio (recursivo). 0 si no existe o falla.
 function getDirSize($dir) {
     if (!is_dir($dir)) return 0;

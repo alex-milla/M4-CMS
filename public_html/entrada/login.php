@@ -9,6 +9,7 @@ include_once '../helpers/theme.php';
 include_once '../helpers/icons.php';
 include_once '../db/functions.php';
 include_once __DIR__ . '/../helpers/csrf.php';
+include_once __DIR__ . '/../helpers/system.php';
 $lang = $_SESSION['lang'] ?? 'es';
 
 // --- Theme initialization (FinSec: claro / oscuro) ---
@@ -93,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($page_title); ?></title>
-    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin.css?v=<?php echo rawurlencode(function_exists('app_version') ? app_version() : '0'); ?>">
 </head>
 <body class="<?php echo $class; ?>">
     <div class="login-shell">

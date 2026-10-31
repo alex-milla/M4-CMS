@@ -18,6 +18,7 @@ require __DIR__ . '/../public_html/db/functions.php';
 require __DIR__ . '/../public_html/db/analytics.php';
 require __DIR__ . '/../public_html/helpers/i18n.php';
 require __DIR__ . '/../public_html/helpers/content.php';
+require __DIR__ . '/../public_html/helpers/system.php';
 
 $fail = 0;
 function check($label, $cond) {
@@ -128,6 +129,31 @@ $visitorId = (string)($stats['visit_log'][0]['visitor_id'] ?? '');
 check('visit log brings visitor id', $visitorId !== '');
 $profile = analytics_visitor_profile(analytics_db(), $visitorId, $from, $today);
 check('visitor profile', (int)$profile['visits'] >= 1);
+
+// --- Rutas que no son páginas (favicon, robots.txt...) ---
+check('favicon no es pagina', analytics_is_page_path('/favicon.ico') === false);
+check('robots no es pagina', analytics_is_page_path('/robots.txt') === false);
+check('apple-touch-icon no es pagina', analytics_is_page_path('/apple-touch-icon.png') === false);
+check('well-known no es pagina', analytics_is_page_path('/.well-known/acme-challenge') === false);
+check('post si es pagina', analytics_is_page_path('/mi-post') === true);
+check('raiz si es pagina', analytics_is_page_path('/') === true);
+$before = (int)analytics_stats($from, $today)['actions'];
+check('favicon no se registra', analytics_track(['path' => '/favicon.ico']) === false);
+check('robots no se registra', analytics_track(['path' => '/robots.txt']) === false);
+$after = (int)analytics_stats($from, $today)['actions'];
+check('acciones sin ruido tecnico', $before === $after);
+
+// Las filas técnicas ya guardadas (instalaciones anteriores) tampoco cuentan
+$pdoA = analytics_db();
+$ins = $pdoA->prepare("INSERT INTO pageviews (visit_id, visitor_id, path, status, created_at)
+    VALUES ('legacy-visit', 'legacy-visitor', '/favicon.ico', 404, datetime('now','localtime'))");
+$ins->execute();
+$afterLegacy = (int)analytics_stats($from, $today)['actions'];
+check('favicon historico tampoco cuenta', $afterLegacy === $after);
+check('paginas sin favicon', !in_array('/favicon.ico', array_column(analytics_stats($from, $today)['pages'], 'path'), true));
+
+// --- Versión de la aplicación (cache busting del CSS) ---
+check('app_version devuelve la version', preg_match('/^\d+\.\d+\.\d+/', app_version()) === 1);
 
 @unlink($tmpDb);
 @unlink($tmpAnalytics);

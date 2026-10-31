@@ -11,6 +11,7 @@ include_once 'helpers/icons.php';
 include_once __DIR__ . '/helpers/csrf.php';
 include_once __DIR__ . '/db/analytics.php';
 include_once __DIR__ . '/helpers/analytics.php';
+include_once __DIR__ . '/helpers/system.php';
 
 createTable();
 
@@ -121,7 +122,7 @@ list($_status_updated, )   = t('msg_status_updated');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($post['title']); ?></title>
-    <link rel="stylesheet" href="assets/finsec.css">
+    <link rel="stylesheet" href="assets/finsec.css?v=<?php echo rawurlencode(function_exists('app_version') ? app_version() : '0'); ?>">
     <?php renderHeadExtras(); ?>
 </head>
 <body class="<?php echo $class; ?>">
