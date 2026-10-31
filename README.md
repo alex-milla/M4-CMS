@@ -10,7 +10,7 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 - RSS feed, XML sitemap and custom 404 page
 - SEO-friendly URLs
 - Admin panel: dashboard KPIs, post management, bulk actions, settings and logs
-- **Built-in web analytics** (mini-Matomo): server-side tracking with no JavaScript and no third-party service, stored in a separate SQLite database (`db/analytics.db`). Visits, page views, entry pages, traffic sources, devices, browsers and response codes in a dedicated **Statistics** page
+- **Built-in web analytics** (mini-Matomo): server-side tracking with no JavaScript and no third-party service, stored in a separate SQLite database (`db/analytics.db`). Matomo-style dashboard with period picker, visit summary, actions metrics, visits-over-time chart, channel types (including AI assistants), visit log, visitor profiles, devices, browsers, operating systems and searches
 - **Login attempt log** with a dedicated tab and manual **IP blocking** (anti brute force): blocked IPs are rejected at the login form
 - **Real client IP behind a CDN**: Cloudflare (and any other trusted proxy) is detected automatically, so the logs, the rate limit and the blocked-IP list work with the visitor's real address instead of the CDN edge
 - **Search engine verification**: paste the Google Search Console / Bing Webmaster Tools token in the settings and the matching `meta` tag is added to every public page
@@ -87,10 +87,18 @@ public_html/
 
 The admin panel includes a lightweight, self-hosted web analytics module (**Statistics**), inspired by Matomo but designed for a small site:
 
-- Tracking is **server-side**: no JavaScript, no third-party requests, no cookies from external services. A visit is a 30-minute session identified by a first-party random cookie (`m4_sid`); without cookies a daily fingerprint is used instead.
+- Tracking is **server-side**: no JavaScript, no third-party requests, no cookies from external services. A **visit** is a 30-minute session (`m4_sid`) and a **visitor** is identified for 90 days (`m4_vid`); without cookies a stable fingerprint is used instead.
 - Data is stored in **its own SQLite database** (`public_html/db/analytics.db`), completely independent from the CMS database.
 - **Privacy**: IP addresses are never stored in plain text (salted hash) and no personal data is collected. Raw rows are purged automatically after 180 days.
-- Reports: visits, page views, new visits, bounce rate, pages per visit, visits over time, most visited pages, entry pages, traffic sources (direct / search engines / social networks / other websites), devices, browsers and response codes (404/403).
+- The report mirrors the Matomo dashboard:
+  - period picker (**Yesterday, Today, This week, Last week, This month, Last month, This year**, last 7/30/90 days or a custom range),
+  - *Visits over time* (line chart with visits and page views),
+  - *Visit summary*: visits, unique visitors, actions, max actions in one visit, actions per visit, average visit duration and bounce rate,
+  - *Actions – main metrics*: page views, unique page views, searches and unique keywords (site search is tracked),
+  - *Overview* cards with the variation against the previous period and a sparkline,
+  - *Channel types*: direct, search engines, social networks, **AI assistants** and other websites, with visits, unique visitors, actions, actions per visit, average time and bounce rate,
+  - *Visit log*: every session with its date, device, browser, OS, entry referrer and the sequence of pages viewed, plus a link to the **visitor profile**,
+  - reports for pages, entry pages, searched keywords, referrers, devices, browsers, operating systems, visits per hour and response codes.
 
 ## Themes
 

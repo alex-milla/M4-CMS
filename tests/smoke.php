@@ -97,12 +97,37 @@ check('analytics_track post', analytics_track(['path' => '/mi-entrada']) === tru
 $_SERVER['HTTP_USER_AGENT'] = 'Googlebot/2.1 (+http://www.google.com/bot.html)';
 check('analytics ignores bots', analytics_track(['path' => '/bot']) === false);
 
-$stats = analytics_stats(30);
-check('analytics pageviews', (int)$stats['pageviews'] === 2);
+// Búsqueda interna y métricas tipo Matomo
+$_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (Windows NT 10.0) Chrome/120.0.0.0 Safari/537.36';
+check('analytics_track search', analytics_track(['path' => '/', 'search' => 'sqlite']) === true);
+
+$today = analytics_today_date(analytics_db());
+$from  = date('Y-m-d', strtotime($today . ' -6 days'));
+$stats = analytics_stats($from, $today);
+check('analytics pageviews', (int)$stats['actions'] === 3);
 check('analytics visits', (int)$stats['visits'] >= 1);
+check('analytics unique visitors', (int)$stats['unique_visitors'] >= 1);
+check('analytics actions per visit', (float)$stats['actions_per_visit'] > 0);
+check('analytics max actions per visit', (int)$stats['max_actions_per_visit'] >= 1);
+check('analytics bounce rate', (float)$stats['bounce_rate'] >= 0 && (float)$stats['bounce_rate'] <= 100);
 check('analytics entry pages', count($stats['entry_pages']) >= 1);
 check('analytics referrer search', (int)($stats['referrer_types']['search'] ?? 0) >= 1);
 check('analytics browser detected', array_key_exists('Chrome', $stats['browsers']));
+check('analytics os detected', array_key_exists('Windows', $stats['os']));
+check('analytics hourly', count($stats['hourly']) === 24);
+check('analytics daily series', count($stats['daily']) === 7);
+check('analytics previous period', isset($stats['previous']['visits']));
+check('analytics visit log', count($stats['visit_log']) >= 1);
+check('analytics visit log actions', !empty($stats['visit_log'][0]['actions_list']));
+check('analytics channels', !empty($stats['channels']));
+check('analytics keywords', !empty($stats['keywords']));
+check('analytics realtime', isset($stats['realtime']['last_24h']));
+
+// Perfil de visitante
+$visitorId = (string)($stats['visit_log'][0]['visitor_id'] ?? '');
+check('visit log brings visitor id', $visitorId !== '');
+$profile = analytics_visitor_profile(analytics_db(), $visitorId, $from, $today);
+check('visitor profile', (int)$profile['visits'] >= 1);
 
 @unlink($tmpDb);
 @unlink($tmpAnalytics);

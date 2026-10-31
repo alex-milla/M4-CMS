@@ -1036,3 +1036,151 @@ body.theme-finsec-dark .badge.danger { background: rgba(127, 29, 29, 0.25); colo
     border-radius: 999px;
 }
 .bar-value { text-align: right; color: var(--text-2); font-weight: 600; }
+
+/* ===================================================================
+   ESTADÍSTICAS — informe tipo Matomo
+   =================================================================== */
+
+.stat-period {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.stat-period__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.stat-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+.stat-chip:hover { color: var(--brand-500); border-color: var(--brand-300); }
+.stat-chip.active { background: var(--brand-500); border-color: var(--brand-500); color: #ffffff; }
+
+.stat-period__custom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-2);
+}
+.stat-period__custom input[type="date"] {
+    padding: 4px 8px;
+    font-size: 0.8125rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text-1);
+}
+.btn-secondary {
+    padding: 5px 12px;
+    font-size: 0.8125rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-1);
+    cursor: pointer;
+}
+.btn-secondary:hover { border-color: var(--brand-300); color: var(--brand-500); }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.stats-card--wide { grid-column: 1 / -1; }
+@media (max-width: 900px) { .stats-grid { grid-template-columns: 1fr; } }
+
+/* Gráfico de líneas */
+.chart-wrap { width: 100%; overflow: hidden; }
+.chart-svg { width: 100%; height: 260px; display: block; }
+.chart-grid { stroke: var(--border); stroke-width: 1; }
+.chart-axis-label { fill: var(--text-3); font-size: 11px; font-family: var(--font-sans); }
+.chart-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.chart-line--visits { stroke: var(--brand-500); }
+.chart-line--views { stroke: var(--info); opacity: 0.75; }
+.chart-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 0.75rem; color: var(--text-2); }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.legend-dot--visits { background: var(--brand-500); }
+.legend-dot--views { background: var(--info); }
+
+/* Filas de métricas (estilo "Resumen de visitas") */
+.metrics { display: flex; flex-direction: column; }
+.metric-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 0.8125rem;
+}
+.metric-row:last-child { border-bottom: 0; }
+.metric-label { color: var(--text-2); }
+.metric-value { color: var(--text-1); font-weight: 600; font-family: var(--font-mono); }
+
+/* Tarjetas de visión general con delta y sparkline */
+.admin-stats--overview { margin-bottom: 16px; }
+.overview-card { position: relative; }
+.overview-card .label { order: 1; }
+.overview-card .value { order: 2; }
+.overview-card .delta { order: 3; font-size: 0.75rem; font-weight: 600; }
+.overview-card__spark { margin-top: 8px; height: 32px; }
+.delta--up { color: var(--success); }
+.delta--down { color: var(--danger); }
+.delta--flat { color: var(--text-3); }
+.spark { width: 100%; height: 32px; display: block; }
+.spark polyline { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spark--up polyline { stroke: var(--success); }
+.spark--down polyline { stroke: var(--danger); }
+.spark--flat polyline { stroke: var(--text-3); }
+
+/* Registro de visitas */
+.realtime-line { font-size: 0.8125rem; color: var(--text-2); margin-bottom: 12px; }
+.realtime-line strong { color: var(--text-1); }
+.visit-log { display: flex; flex-direction: column; gap: 10px; }
+.visit-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    background: var(--surface);
+}
+.visit-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.8125rem;
+    color: var(--text-2);
+    margin-bottom: 8px;
+}
+.visit-card__date { color: var(--text-1); font-weight: 600; }
+.visit-card__ref { margin-left: auto; }
+.visit-card__actions { display: flex; flex-direction: column; gap: 4px; }
+.visit-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8125rem;
+    color: var(--text-2);
+    padding-left: 10px;
+    border-left: 2px solid var(--border);
+}
+.visit-action__time { font-size: 0.75rem; color: var(--text-3); }
+.visit-action__path { color: var(--text-1); }
+.visit-action__search { color: var(--brand-500); }
+.visit-card__foot { margin-top: 8px; }
+
+/* Barras por hora */
+.chart-bars--hourly { height: 120px; }

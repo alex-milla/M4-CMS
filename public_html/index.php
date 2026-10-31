@@ -14,9 +14,6 @@ include_once 'helpers/analytics.php';
 
 createTable();
 
-// Analítica web (registro server-side, en una BBDD SQLite independiente)
-analytics_track();
-
 $settings = getAllSettings();
 $siteTitle = $settings['site_title'] ?? 'M4 CMS';
 $siteTagline = $settings['site_tagline'] ?? 'Blog personal con PHP y SQLite';
@@ -25,6 +22,10 @@ $siteTagline = $settings['site_tagline'] ?? 'Blog personal con PHP y SQLite';
 $searchQuery = trim($_GET['q'] ?? '');
 $categoryFilter = trim($_GET['cat'] ?? '');
 $tagFilter = trim($_GET['tag'] ?? '');
+
+// Analítica web (registro server-side, en una BBDD SQLite independiente).
+// La búsqueda interna se registra como acción con su término.
+analytics_track($searchQuery !== '' ? ['search' => $searchQuery] : []);
 
 // Paginacion: 10 posts por pagina
 $perPage = 10;
