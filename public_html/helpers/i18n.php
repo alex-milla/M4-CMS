@@ -384,6 +384,9 @@ function t($key) {
         'stats_profile_range' => ['en' => 'Visits from', 'es' => 'Visitas desde'],
         'stats_close_profile' => ['en' => 'Close profile', 'es' => 'Cerrar perfil'],
         'stats_profile_loading' => ['en' => 'Loading profile…', 'es' => 'Cargando perfil…'],
+        'stats_this_visit' => ['en' => 'this visit', 'es' => 'esta visita'],
+        'stats_profile_visits_one' => ['en' => 'visit', 'es' => 'visita'],
+        'stats_profile_actions_one' => ['en' => 'page view', 'es' => 'página vista'],
         'stats_ip_origin' => ['en' => 'Origin IP', 'es' => 'IP de origen'],
 
         // --- Privacidad de la analítica (IP de origen) ---

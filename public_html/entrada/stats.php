@@ -219,11 +219,11 @@ function stats_bar_row($label, $value, $max, $mono = false) {
  * Muestra todas sus visitas en la ventana de retención con sus páginas.
  * Opciones:
  *   mode          'inline' (render server-side) | 'fragment' (cargado por AJAX)
- *   exclude_visit id de la visita que ya se ve arriba (no se repite)
+ *   current_visit id de la visita desde la que se abrió el perfil (se marca)
  */
 function stats_visitor_profile_panel($profile, $profileId, $labels, $opts = []) {
     $mode          = (string)($opts['mode'] ?? 'inline');
-    $excludeVisit  = (string)($opts['exclude_visit'] ?? '');
+    $currentVisit  = (string)($opts['current_visit'] ?? '');
     $st_profile        = $labels['profile'];
     $st_profile_visits = $labels['profile_visits'];
     $st_profile_actions= $labels['profile_actions'];
@@ -238,12 +238,14 @@ function stats_visitor_profile_panel($profile, $profileId, $labels, $opts = []) 
     $st_col_device     = $labels['col_device'];
     $st_actions        = $labels['actions'];
     $deviceLabels      = $labels['devices'];
+    $st_none           = $labels['profile_none'];
+    $st_this_visit     = $labels['this_visit'];
+    $st_visit_one      = $labels['profile_visits_one'];
+    $st_action_one     = $labels['profile_actions_one'];
 
-    $visits = [];
-    foreach ((array)$profile['log'] as $pv) {
-        if ($excludeVisit !== '' && (string)$pv['visit_id'] === $excludeVisit) continue;
-        $visits[] = $pv;
-    }
+    // El perfil muestra TODAS las visitas del visitante (también la que se
+    // está viendo): la lista completa es el objetivo. La visita actual se marca.
+    $visits = (array)$profile['log'];
 
     ob_start();
     ?>
@@ -264,19 +266,22 @@ function stats_visitor_profile_panel($profile, $profileId, $labels, $opts = []) 
 <?php endif; ?>
         </div>
         <div class="visitor-profile__stats">
-            <span><strong><?php echo (int)$profile['visits']; ?></strong> <?php echo htmlspecialchars(strtolower($st_profile_visits)); ?></span>
-            <span><strong><?php echo (int)$profile['actions']; ?></strong> <?php echo htmlspecialchars(strtolower($st_profile_actions)); ?></span>
+            <span><strong><?php echo (int)$profile['visits']; ?></strong> <?php echo htmlspecialchars((int)$profile['visits'] === 1 ? $st_visit_one : strtolower($st_profile_visits)); ?></span>
+            <span><strong><?php echo (int)$profile['actions']; ?></strong> <?php echo htmlspecialchars((int)$profile['actions'] === 1 ? $st_action_one : strtolower($st_profile_actions)); ?></span>
             <span><strong><?php echo htmlspecialchars(stats_duration($profile['duration'])); ?></strong> <?php echo htmlspecialchars(strtolower($st_profile_time)); ?></span>
         </div>
 <?php if (empty($visits)): ?>
-        <p class="help-text"><?php echo htmlspecialchars($labels['profile_none'] ?? '—'); ?></p>
+        <p class="help-text"><?php echo htmlspecialchars($st_none); ?></p>
 <?php else: ?>
         <div class="visitor-profile__visits">
 <?php foreach ($visits as $pv): ?>
-            <div class="profile-visit">
+            <div class="profile-visit<?php echo ($currentVisit !== '' && (string)$pv['visit_id'] === $currentVisit) ? ' profile-visit--current' : ''; ?>">
                 <div class="profile-visit__head">
                     <span class="mono"><?php echo htmlspecialchars($pv['started_at']); ?></span>
-                    <span><?php echo (int)$pv['actions']; ?> <?php echo htmlspecialchars(strtolower($st_actions)); ?></span>
+<?php if ($currentVisit !== '' && (string)$pv['visit_id'] === $currentVisit): ?>
+                    <span class="profile-visit__tag"><?php echo htmlspecialchars($st_this_visit); ?></span>
+<?php endif; ?>
+                    <span><?php echo (int)$pv['actions']; ?> <?php echo htmlspecialchars((int)$pv['actions'] === 1 ? strtolower($st_action_one) : strtolower($st_actions)); ?></span>
                     <span><?php echo htmlspecialchars(stats_duration($pv['duration'])); ?></span>
                     <span><?php echo htmlspecialchars($pv['referrer'] !== '' ? $pv['referrer'] : '—'); ?></span>
                     <span class="mono"><?php echo htmlspecialchars($pv['ip'] !== '' ? $pv['ip'] : '—'); ?></span>
@@ -452,6 +457,10 @@ $profileLabels = [
     'profile_range'   => $st_profile_range,
     'ip_origin'       => $st_ip_origin,
     'close_profile'   => t('stats_close_profile')[0],
+    'profile_none'    => $st_profile_none,
+    'this_visit'      => t('stats_this_visit')[0],
+    'profile_visits_one'  => t('stats_profile_visits_one')[0],
+    'profile_actions_one' => t('stats_profile_actions_one')[0],
     'back'            => $st_back,
     'col_actions'     => $st_col_actions,
     'col_duration'    => $st_col_duration,
@@ -467,7 +476,7 @@ if ((string)($_GET['fragment'] ?? '') === '1' && $profileId !== '') {
     header('Content-Type: text/html; charset=utf-8');
     echo stats_visitor_profile_panel($profile, $profileId, $profileLabels, [
         'mode'          => 'fragment',
-        'exclude_visit' => $profileVisitId,
+        'current_visit' => $profileVisitId,
     ]);
     exit;
 }
@@ -718,7 +727,7 @@ foreach ($compact['items'] as $action):
 <?php if ($isProfileOpen): ?>
                                 <?php echo stats_visitor_profile_panel($profile, $profileId, $profileLabels, [
                                     'mode'          => 'inline',
-                                    'exclude_visit' => (string)$visit['visit_id'],
+                                    'current_visit' => (string)$visit['visit_id'],
                                 ]); ?>
 <?php endif; ?>
                             </div>
@@ -734,7 +743,7 @@ foreach ($compact['items'] as $action):
                             <h3><?php echo finsec_icon('eye', 16); ?> <?php echo htmlspecialchars($st_profile); ?></h3>
                             <?php echo stats_visitor_profile_panel($profile, $profileId, $profileLabels, [
                                 'mode'          => 'inline',
-                                'exclude_visit' => $profileVisitId,
+                                'current_visit' => $profileVisitId,
                             ]); ?>
                         </div>
 <?php endif; ?>
