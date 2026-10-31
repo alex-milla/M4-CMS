@@ -149,6 +149,27 @@ function m4_ua_is_bot($ua) {
     );
 }
 
+// Anonimiza una IP para poder mostrarla sin guardar el dato completo:
+//   IPv4 -> se oculta el último octeto (188.114.96.0), igual que hace Matomo
+//   IPv6 -> se conservan los 3 primeros grupos (prefijo /48)
+function m4_anonymize_ip($ip) {
+    $ip = trim((string)$ip);
+    if ($ip === '') return '';
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+        $parts = explode('.', $ip);
+        $parts[3] = '0';
+        return implode('.', $parts);
+    }
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false) {
+        $packed = @inet_pton($ip);
+        if ($packed === false) return '';
+        $masked = substr($packed, 0, 6) . str_repeat("\0", 10);
+        $out = @inet_ntop($masked);
+        return $out !== false ? $out : '';
+    }
+    return '';
+}
+
 // Nombre corto del navegador/cliente a partir del User-Agent.
 function m4_ua_summary($ua) {
     $ua = (string)$ua;

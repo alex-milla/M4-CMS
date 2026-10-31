@@ -155,6 +155,31 @@ check('paginas sin favicon', !in_array('/favicon.ico', array_column(analytics_st
 // --- Versión de la aplicación (cache busting del CSS) ---
 check('app_version devuelve la version', preg_match('/^\d+\.\d+\.\d+/', app_version()) === 1);
 
+// --- IP de origen: modos de almacenamiento ---
+check('anonymiza ipv4', m4_anonymize_ip('188.114.96.42') === '188.114.96.0');
+check('anonymiza ipv6', strpos(m4_anonymize_ip('2a06:98c1:3120::6'), '2a06:98c1:3120') === 0);
+check('ip invalida se devuelve vacia', m4_anonymize_ip('no-es-ip') === '');
+
+$_SERVER['REMOTE_ADDR'] = '8.8.8.8';
+unset($_SERVER['HTTP_CF_CONNECTING_IP']);
+check('modo por defecto es anonimo', analytics_ip_storage_mode() === 'anon');
+check('guarda ip anonimizada', analytics_store_ip() === '8.8.8.0');
+
+// El ajuste manda: 'none' no guarda IP, 'full' guarda la completa
+saveSetting('analytics_ip_storage', 'none');
+analytics_ip_storage_cache_reset();
+check('modo none no guarda ip', analytics_store_ip() === '');
+saveSetting('analytics_ip_storage', 'full');
+analytics_ip_storage_cache_reset();
+check('modo full guarda la ip', analytics_store_ip() === '8.8.8.8');
+saveSetting('analytics_ip_storage', 'anon');
+analytics_ip_storage_cache_reset();
+check('modo anon vuelve a anonimizar', analytics_store_ip() === '8.8.8.0');
+
+// El perfil del visitante cubre toda la retención (no solo el periodo visible)
+$profileFull = analytics_visitor_profile(analytics_db(), $visitorId);
+check('perfil con retencion completa', (int)$profileFull['visits'] >= 1);
+
 @unlink($tmpDb);
 @unlink($tmpAnalytics);
 

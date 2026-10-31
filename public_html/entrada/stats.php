@@ -74,9 +74,10 @@ $prev  = $stats['previous'] ?? [];
 // Purgar registros antiguos (logrotate sin cron)
 analytics_purge();
 
-// Perfil de visitante (opcional)
+// Perfil de visitante (opcional). Se busca en toda la retención, no solo en el
+// periodo visible: el perfil es del visitante, no del rango (como en Matomo).
 $profileId = trim((string)($_GET['profile'] ?? ''));
-$profile = ($profileId !== '') ? analytics_visitor_profile($pdo, $profileId, $start, $end) : null;
+$profile = ($profileId !== '') ? analytics_visitor_profile($pdo, $profileId) : null;
 
 // Tema (FinSec claro/oscuro)
 $theme = initTheme();
@@ -298,6 +299,8 @@ list($st_profile_none, ) = t('stats_no_visitor_profile');
 list($st_profile_visits, )= t('stats_profile_visits');
 list($st_profile_actions,)= t('stats_profile_actions');
 list($st_profile_time, )  = t('stats_profile_duration');
+list($st_profile_range, ) = t('stats_profile_range');
+list($st_ip_origin, )     = t('stats_ip_origin');
 list($st_back, )          = t('stats_back');
 list($st_legend_visits, ) = t('stats_legend_visits');
 list($st_legend_views, )  = t('stats_legend_views');
@@ -364,7 +367,7 @@ $deviceLabels = ['desktop' => $st_desktop, 'mobile' => $st_mobile, 'tablet' => $
 
 <?php if ($profile !== null): ?>
             <!-- Perfil del visitante -->
-            <div class="admin-card">
+            <div class="admin-card" id="visitor-profile">
                 <h3><?php echo finsec_icon('eye', 16); ?> <?php echo htmlspecialchars($st_profile); ?></h3>
                 <?php if (empty($profile['log'])): ?>
                     <p class="help-text"><?php echo htmlspecialchars($st_profile_none); ?></p>
@@ -386,7 +389,13 @@ $deviceLabels = ['desktop' => $st_desktop, 'mobile' => $st_mobile, 'tablet' => $
                         <div class="label"><?php echo htmlspecialchars($st_profile_time); ?></div>
                     </div>
                 </div>
-                <p class="help-text mono" style="margin-top:12px;">ID: <?php echo htmlspecialchars(substr((string)$profileId, 0, 12)); ?>…</p>
+                <p class="help-text mono" style="margin-top:12px;">
+                    ID: <?php echo htmlspecialchars(substr((string)$profileId, 0, 12)); ?>…
+<?php if (!empty($profile['ip'])): ?>
+                    · <?php echo htmlspecialchars($st_ip_origin); ?>: <strong class="mono"><?php echo htmlspecialchars($profile['ip']); ?></strong>
+<?php endif; ?>
+                    · <?php echo htmlspecialchars($st_profile_range); ?> <?php echo htmlspecialchars(($profile['start'] ?? '') . ' → ' . ($profile['end'] ?? '')); ?>
+                </p>
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
@@ -395,6 +404,7 @@ $deviceLabels = ['desktop' => $st_desktop, 'mobile' => $st_mobile, 'tablet' => $
                                 <th><?php echo htmlspecialchars($st_col_actions); ?></th>
                                 <th><?php echo htmlspecialchars($st_col_duration); ?></th>
                                 <th><?php echo htmlspecialchars($st_referrer); ?></th>
+                                <th><?php echo htmlspecialchars($st_ip_origin); ?></th>
                                 <th><?php echo htmlspecialchars($st_col_device); ?></th>
                             </tr>
                         </thead>
@@ -405,6 +415,7 @@ $deviceLabels = ['desktop' => $st_desktop, 'mobile' => $st_mobile, 'tablet' => $
                                 <td><?php echo (int)$pv['actions']; ?></td>
                                 <td><?php echo htmlspecialchars(stats_duration($pv['duration'])); ?></td>
                                 <td><?php echo htmlspecialchars($pv['referrer'] !== '' ? $pv['referrer'] : '—'); ?></td>
+                                <td class="mono"><?php echo htmlspecialchars($pv['ip'] !== '' ? $pv['ip'] : '—'); ?></td>
                                 <td><?php echo htmlspecialchars(($deviceLabels[$pv['device']] ?? $pv['device']) . ' · ' . $pv['browser'] . ' · ' . $pv['os']); ?></td>
                             </tr>
 <?php endforeach; ?>
@@ -554,6 +565,9 @@ foreach ($cards as $card):
                                     <?php echo htmlspecialchars($st_direct); ?>
 <?php endif; ?>
                                 </span>
+<?php if (!empty($visit['ip'])): ?>
+                                <span class="visit-card__ip mono" title="<?php echo htmlspecialchars($st_ip_origin); ?>"><?php echo htmlspecialchars($visit['ip']); ?></span>
+<?php endif; ?>
                             </div>
                             <div class="visit-card__actions">
 <?php
@@ -582,7 +596,7 @@ foreach ($compact['items'] as $action):
                             </div>
 <?php if (!empty($visit['visitor_id'])): ?>
                             <div class="visit-card__foot">
-                                <a class="btn-link" href="?period=<?php echo htmlspecialchars($preset); ?>&amp;from=<?php echo htmlspecialchars($start); ?>&amp;to=<?php echo htmlspecialchars($end); ?>&amp;profile=<?php echo urlencode((string)$visit['visitor_id']); ?>">
+                                <a class="btn-link" href="?period=<?php echo htmlspecialchars($preset); ?>&amp;from=<?php echo htmlspecialchars($start); ?>&amp;to=<?php echo htmlspecialchars($end); ?>&amp;profile=<?php echo urlencode((string)$visit['visitor_id']); ?>#visitor-profile">
                                     <?php echo finsec_icon('eye', 14); ?> <?php echo htmlspecialchars($st_profile); ?>
                                 </a>
                             </div>

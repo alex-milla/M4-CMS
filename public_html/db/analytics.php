@@ -72,6 +72,7 @@ function analytics_schema($pdo) {
         browser TEXT NOT NULL DEFAULT 'other',
         os TEXT NOT NULL DEFAULT 'other',
         search_term TEXT,
+        ip TEXT,
         is_new_visit INTEGER NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL
     )");
@@ -87,6 +88,9 @@ function analytics_schema($pdo) {
         }
         if (!in_array('os', $cols, true)) {
             $pdo->exec("ALTER TABLE pageviews ADD COLUMN os TEXT");
+        }
+        if (!in_array('ip', $cols, true)) {
+            $pdo->exec("ALTER TABLE pageviews ADD COLUMN ip TEXT");
         }
     } catch (\Throwable $e) { /* las columnas nuevas son opcionales */ }
 
@@ -251,6 +255,42 @@ function analytics_set_cookie($name, $value, $days) {
     return (bool)setcookie($name, $value, $expires, '/', '', $secure, true);
 }
 
+// Modo de almacenamiento de la IP de origen (Ajuste 'analytics_ip_storage'):
+//   'anon' (por defecto) -> IP anonimizada (último octeto / prefijo /48)
+//   'none'               -> no se guarda ninguna IP
+//   'full'               -> IP completa (opt-in explícito del propietario)
+function analytics_ip_storage_mode($reset = false) {
+    static $mode = null;
+    if ($reset) { $mode = null; return 'anon'; }
+    if ($mode !== null) return $mode;
+    $value = '';
+    if (function_exists('m4_setting_value')) {
+        $value = (string)(m4_setting_value('analytics_ip_storage') ?? '');
+    }
+    if (!in_array($value, ['anon', 'none', 'full'], true)) $value = 'anon';
+    $mode = $value;
+    return $mode;
+}
+
+// Vacía la caché del modo de almacenamiento (tests / cambios en caliente).
+function analytics_ip_storage_cache_reset() {
+    analytics_ip_storage_mode(true);
+}
+
+// Valor de IP que se guardará en una página vista ('' si no se guarda nada).
+function analytics_store_ip() {
+    $mode = analytics_ip_storage_mode();
+    if ($mode === 'none') return '';
+    $ip = function_exists('m4_client_ip')
+        ? m4_client_ip()
+        : (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    $ip = trim((string)$ip);
+    if ($ip === '') return '';
+    if ($mode === 'full') return substr($ip, 0, 45);
+    if (function_exists('m4_anonymize_ip')) return m4_anonymize_ip($ip);
+    return '';
+}
+
 // Identificador de visita: cookie aleatoria o huella alternativa sin cookies.
 // Devuelve [visit_id, es_nueva, modo].
 function analytics_visit_id() {
@@ -354,8 +394,8 @@ function analytics_track(array $opts = []) {
         $stmt = $pdo->prepare(
             "INSERT INTO pageviews
                 (visit_id, visitor_id, path, status, referrer, referrer_host, referrer_type,
-                 device, browser, os, search_term, is_new_visit, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'))"
+                 device, browser, os, search_term, ip, is_new_visit, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'))"
         );
         $stmt->execute([
             $visitId,
@@ -369,6 +409,7 @@ function analytics_track(array $opts = []) {
             analytics_browser($ua),
             analytics_os($ua),
             $search !== '' ? $search : null,
+            analytics_store_ip(),
             $isNew ? 1 : 0,
         ]);
         return true;
@@ -417,7 +458,7 @@ function analytics_visits_cte($start, $end) {
             ),
             f AS (
                 SELECT b.visit_id, b.visitor_id, b.referrer_host, b.referrer_type, b.referrer,
-                       b.device, b.browser, b.os, b.created_at AS started_at,
+                       b.device, b.browser, b.os, b.ip, b.created_at AS started_at,
                        v.last_at, v.actions
                 FROM base b JOIN v ON v.visit_id = b.visit_id AND b.id = v.first_id
             )";
@@ -686,7 +727,7 @@ function analytics_visit_log($pdo, $start, $end, $limit = 50) {
         $limit = max(1, (int)$limit);
         $rows = analytics_query($pdo,
             analytics_visits_cte($start, $end) . "
-             SELECT visit_id, visitor_id, referrer_host, referrer_type, device, browser, os,
+             SELECT visit_id, visitor_id, referrer_host, referrer_type, device, browser, os, ip,
                     started_at, last_at, actions
              FROM f
              ORDER BY started_at DESC LIMIT $limit", [$start, $end]);
@@ -731,6 +772,7 @@ function analytics_visit_log($pdo, $start, $end, $limit = 50) {
                 'device'     => (string)($row['device'] ?? 'unknown'),
                 'browser'    => (string)($row['browser'] ?? 'other'),
                 'os'         => (string)($row['os'] ?? 'other'),
+                'ip'         => (string)($row['ip'] ?? ''),
                 'actions_list' => $actions[$vid] ?? [],
             ];
         }
@@ -740,15 +782,33 @@ function analytics_visit_log($pdo, $start, $end, $limit = 50) {
     return $log;
 }
 
-// Perfil de un visitante: todas sus visitas en el rango indicado.
-function analytics_visitor_profile($pdo, $visitorId, $start, $end) {
-    $profile = ['visitor_id' => (string)$visitorId, 'visits' => 0, 'actions' => 0, 'duration' => 0, 'log' => []];
+// Perfil de un visitante: todas sus visitas.
+// Por defecto se busca en toda la retención (no solo en el periodo visible),
+// igual que hace Matomo: el perfil es del visitante, no del rango.
+function analytics_visitor_profile($pdo, $visitorId, $start = null, $end = null) {
+    $profile = [
+        'visitor_id' => (string)$visitorId,
+        'visits' => 0, 'actions' => 0, 'duration' => 0,
+        'start' => '', 'end' => '', 'ip' => '',
+        'log' => [],
+    ];
     try {
         $visitorId = trim((string)$visitorId);
         if ($visitorId === '') return $profile;
+
+        if ($start === null || $end === null || $start === '' || $end === '') {
+            $today = analytics_today_date($pdo);
+            $end   = ($end !== null && $end !== '') ? (string)$end : $today;
+            $start = ($start !== null && $start !== '')
+                ? (string)$start
+                : date('Y-m-d', strtotime($today . ' -' . (ANALYTICS_RETENTION_DAYS - 1) . ' days'));
+        }
+        $profile['start'] = (string)$start;
+        $profile['end']   = (string)$end;
+
         $rows = analytics_query($pdo,
             analytics_visits_cte($start, $end) . "
-             SELECT visit_id, visitor_id, referrer_host, referrer_type, device, browser, os,
+             SELECT visit_id, visitor_id, referrer_host, referrer_type, device, browser, os, ip,
                     started_at, last_at, actions
              FROM f WHERE visitor_id = ? ORDER BY started_at DESC LIMIT 100", [$start, $end, $visitorId]);
         foreach ($rows as $row) {
@@ -765,10 +825,12 @@ function analytics_visitor_profile($pdo, $visitorId, $start, $end) {
                 'device'     => (string)($row['device'] ?? 'unknown'),
                 'browser'    => (string)($row['browser'] ?? 'other'),
                 'os'         => (string)($row['os'] ?? 'other'),
+                'ip'         => (string)($row['ip'] ?? ''),
             ];
             $profile['visits']++;
             $profile['actions'] += (int)$row['actions'];
             $profile['duration'] += $duration;
+            if ($profile['ip'] === '') $profile['ip'] = (string)($row['ip'] ?? '');
         }
     } catch (\Throwable $e) { /* perfil vacío */ }
     return $profile;

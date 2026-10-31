@@ -70,6 +70,12 @@ list($btn_wt_bing, )       = t('btn_wt_bing_link');
 list($lbl_proxy, )         = t('cfg_proxy_label');
 list($help_proxy, )        = t('cfg_proxy_help');
 list($lbl_proxy_list, )    = t('cfg_proxy_list');
+list($lbl_ip_storage, )    = t('cfg_ip_storage_label');
+list($help_ip_storage, )   = t('cfg_ip_storage_help');
+list($lbl_ip_storage_mode, ) = t('cfg_ip_storage_mode');
+list($opt_ip_anon, )       = t('cfg_ip_storage_anon');
+list($opt_ip_none, )       = t('cfg_ip_storage_none');
+list($opt_ip_full, )       = t('cfg_ip_storage_full');
 
 $sitemapUrl = rtrim(siteBaseUrl(), '/') . '/sitemap.xml';
 
@@ -105,6 +111,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Proxies de confianza (para resolver la IP real del visitante)
             if (array_key_exists('trusted_proxies', $_POST)) {
                 saveSetting('trusted_proxies', m4_sanitize_trusted_proxies($_POST['trusted_proxies']));
+            }
+
+            // Almacenamiento de la IP de origen en la analítica
+            if (array_key_exists('analytics_ip_storage', $_POST)) {
+                $ipMode = (string)$_POST['analytics_ip_storage'];
+                if (!in_array($ipMode, ['anon', 'none', 'full'], true)) $ipMode = 'anon';
+                saveSetting('analytics_ip_storage', $ipMode);
             }
 
             // Cambios de cuenta admin (usuario o contraseña): exigen la
@@ -278,6 +291,22 @@ try {
                     <div class="admin-form-group">
                         <label for="current_password"><?php echo htmlspecialchars($lbl_pathpass); ?></label>
                         <input type="password" id="current_password" name="current_password" autocomplete="off" style="max-width:480px;">
+                    </div>
+                </div>
+
+                <!-- Privacidad de la analítica (IP de origen) -->
+                <div class="admin-card">
+                    <h3><?php echo finsec_icon('shield', 16); ?> <?php echo htmlspecialchars($lbl_ip_storage); ?></h3>
+
+                    <p class="help-text" style="margin-bottom:12px;"><?php echo htmlspecialchars($help_ip_storage); ?></p>
+
+                    <div class="admin-form-group">
+                        <label for="analytics_ip_storage"><?php echo htmlspecialchars($lbl_ip_storage_mode); ?></label>
+                        <select id="analytics_ip_storage" name="analytics_ip_storage" class="theme-selector" style="max-width:420px;">
+                            <option value="anon"<?php echo ($settings['analytics_ip_storage'] ?? 'anon') === 'anon' ? ' selected' : ''; ?>><?php echo htmlspecialchars($opt_ip_anon); ?></option>
+                            <option value="none"<?php echo ($settings['analytics_ip_storage'] ?? '') === 'none' ? ' selected' : ''; ?>><?php echo htmlspecialchars($opt_ip_none); ?></option>
+                            <option value="full"<?php echo ($settings['analytics_ip_storage'] ?? '') === 'full' ? ' selected' : ''; ?>><?php echo htmlspecialchars($opt_ip_full); ?></option>
+                        </select>
                     </div>
                 </div>
 

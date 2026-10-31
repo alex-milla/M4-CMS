@@ -1170,6 +1170,14 @@ body.theme-finsec-dark .badge.danger { background: rgba(127, 29, 29, 0.25); colo
 }
 .visit-card__date { color: var(--text-1); font-weight: 600; }
 .visit-card__ref { margin-left: auto; }
+.visit-card__ip {
+    font-size: 0.75rem;
+    color: var(--text-2);
+    background: var(--muted);
+    border-radius: var(--radius-md);
+    padding: 1px 8px;
+}
+#visitor-profile { scroll-margin-top: 84px; }
 .visit-card__actions { display: flex; flex-direction: column; gap: 4px; }
 .visit-action {
     display: flex;

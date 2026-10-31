@@ -89,7 +89,7 @@ The admin panel includes a lightweight, self-hosted web analytics module (**Stat
 
 - Tracking is **server-side**: no JavaScript, no third-party requests, no cookies from external services. A **visit** is a 30-minute session (`m4_sid`) and a **visitor** is identified for 90 days (`m4_vid`); without cookies a stable fingerprint is used instead.
 - Data is stored in **its own SQLite database** (`public_html/db/analytics.db`), completely independent from the CMS database.
-- **Privacy**: IP addresses are never stored in plain text (salted hash) and no personal data is collected. Raw rows are purged automatically after 180 days.
+- **Privacy**: no personal data is collected and no third-party service is involved. The **origin IP is stored anonymized by default** (`188.114.96.0`, i.e. the last IPv4 octet and the IPv6 /48 prefix are zeroed, exactly like Matomo); it can be changed to "do not store" or "full IP" in **Settings → Analytics privacy**. Raw rows are purged automatically after 180 days.
 - The report mirrors the Matomo dashboard:
   - period picker (**Yesterday, Today, This week, Last week, This month, Last month, This year**, last 7/30/90 days or a custom range),
   - *Visits over time* (line chart with visits and page views),
@@ -97,8 +97,10 @@ The admin panel includes a lightweight, self-hosted web analytics module (**Stat
   - *Actions – main metrics*: page views, unique page views, searches and unique keywords (site search is tracked),
   - *Overview* cards with the variation against the previous period and a sparkline,
   - *Channel types*: direct, search engines, social networks, **AI assistants** and other websites, with visits, unique visitors, actions, actions per visit, average time and bounce rate,
-  - *Visit log*: every session with its date, device, browser, OS, entry referrer and the sequence of pages viewed, plus a link to the **visitor profile**,
+  - *Visit log*: every session with its date, device, browser, OS, origin IP, entry referrer and the sequence of pages viewed, plus a link to the **visitor profile**,
   - reports for pages, entry pages, searched keywords, referrers, devices, browsers, operating systems, visits per hour and response codes.
+
+The **visitor profile** shows every visit of that visitor across the whole retention window (not just the selected period), with its origin IP, and the link from the visit log jumps straight to it.
 
 Technical requests (`/favicon.ico`, `/robots.txt`, `apple-touch-icon`, `/.well-known/…`) are **not** tracked: they are browser housekeeping, not visits. The panel and site stylesheets are requested with a `?v=<version>` parameter, so a new release always invalidates the browser cache and the interface never shows an outdated stylesheet.
 

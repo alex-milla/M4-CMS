@@ -381,6 +381,16 @@ function t($key) {
         'stats_legend_visits' => ['en' => 'Visits', 'es' => 'Visitas'],
         'stats_legend_views' => ['en' => 'Page views', 'es' => 'Páginas vistas'],
         'stats_period_label' => ['en' => 'Period', 'es' => 'Periodo'],
+        'stats_profile_range' => ['en' => 'Visits from', 'es' => 'Visitas desde'],
+        'stats_ip_origin' => ['en' => 'Origin IP', 'es' => 'IP de origen'],
+
+        // --- Privacidad de la analítica (IP de origen) ---
+        'cfg_ip_storage_label' => ['en' => 'Analytics privacy (origin IP)', 'es' => 'Privacidad de la analítica (IP de origen)'],
+        'cfg_ip_storage_help' => ['en' => 'Choose how the visitor IP is stored in the local analytics database. The anonymized mode keeps the network of the visitor but hides the last part of the address, exactly like Matomo does by default. Only the administrator of this site can see these values.', 'es' => 'Elige cómo se guarda la IP del visitante en la base de datos local de analítica. El modo anonimizado conserva la red del visitante pero oculta la última parte de la dirección, igual que hace Matomo por defecto. Solo el administrador de este sitio puede ver estos valores.'],
+        'cfg_ip_storage_mode' => ['en' => 'IP storage mode', 'es' => 'Modo de almacenamiento de la IP'],
+        'cfg_ip_storage_anon' => ['en' => 'Anonymized (recommended): 188.114.96.0', 'es' => 'Anonimizada (recomendado): 188.114.96.0'],
+        'cfg_ip_storage_none' => ['en' => 'Do not store any IP address', 'es' => 'No guardar ninguna dirección IP'],
+        'cfg_ip_storage_full' => ['en' => 'Full IP address (personal data, use with care)', 'es' => 'Dirección IP completa (dato personal, usar con precaución)'],
 
         // --- Logs: intentos de login y bloqueo de IPs ---
         'logs_tab_activity' => ['en' => 'Activity', 'es' => 'Actividad'],
