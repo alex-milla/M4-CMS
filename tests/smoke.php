@@ -50,6 +50,30 @@ check('siteBaseUrl', preg_match('#^https?://#', siteBaseUrl()) === 1);
 check('t() translation', t('nav_login')[0] !== 'nav_login');
 check('postExcerptHtml', strpos(postExcerptHtml(['content' => "a\n\nb"]), 'a') !== false);
 
+// --- Navegación anterior/siguiente ---
+foreach ([
+    ['nav-old', '2020-01-01 10:00:00', 'published'],
+    ['nav-mid', '2020-06-01 10:00:00', 'published'],
+    ['nav-new', '2020-12-31 10:00:00', 'published'],
+    ['nav-draft', '2020-07-01 10:00:00', 'draft'],
+] as [$slug, $when, $status]) {
+    $ins = $GLOBALS['db']->prepare("INSERT INTO posts (title, content, status, slug, created_at, updated_at)
+        VALUES (?, 'contenido', ?, ?, ?, ?)");
+    $ins->execute([$slug, $status, $slug, $when, $when]);
+}
+$mid = getPostBySlug('nav-mid');
+$adj = getAdjacentPublishedPosts($mid);
+check('nav: anterior es el post mas antiguo', ($adj['prev']['slug'] ?? '') === 'nav-old');
+check('nav: siguiente es el post mas reciente', ($adj['next']['slug'] ?? '') === 'nav-new');
+check('nav: ignora los borradores', ($adj['next']['slug'] ?? '') !== 'nav-draft');
+$oldest = getAdjacentPublishedPosts(getPostBySlug('nav-old'));
+check('nav: el primero no tiene anterior', empty($oldest['prev']));
+$newest = getAdjacentPublishedPosts(getPostBySlug('nav-new'));
+$newestNext = $newest['next'] ?? null;
+check('nav: el siguiente es mas reciente que el actual',
+    $newestNext === null || strcmp((string)$newestNext['created_at'], '2020-12-31 10:00:00') > 0);
+check('nav: sin datos devuelve array vacio', is_array(getAdjacentPublishedPosts(null)));
+
 // --- Bloques de código [code]...[/code] ---
 $codeContent = "Intro\n\n[code]\n192.42.116[]100\n95.216.5[]90\n[/code]\n\nCierre";
 $codeHtml = postContentHtml($codeContent);

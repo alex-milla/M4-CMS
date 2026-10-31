@@ -159,6 +159,7 @@ $usedTags = getUsedTags();
                 <div>
                     <label for="content"><?php echo htmlspecialchars($lbl_content_label); ?></label>
                     <textarea id="content" name="content" rows="10" placeholder="<?php echo htmlspecialchars($ph_content_val); ?>" required><?php echo htmlspecialchars($post['content']); ?></textarea>
+                    <small style="color: var(--text-3);"><?php echo htmlspecialchars(t('help_post_code')[0]); ?></small>
                 </div>
 
                 <button type="submit" class="btn-primary"><?php echo finsec_icon('check', 16); ?> <?php echo htmlspecialchars($btn_update_post); ?></button>

@@ -395,6 +395,11 @@ function t($key) {
         'post_code_lines' => ['en' => 'lines', 'es' => 'líneas'],
         'post_code_line_one' => ['en' => 'line', 'es' => 'línea'],
         'help_post_code' => ['en' => 'Tip: wrap a block between [code] and [/code] to show it as a collapsible box with a "Copy" button. You can give it a title with [code=Indicators].', 'es' => 'Truco: enclose un fragmento entre [code] y [/code] para mostrarlo como una caja plegable con botón "Copiar". Puedes ponerle un título con [code=Indicadores].'],
+
+        // --- Navegación entre publicaciones ---
+        'post_nav_prev' => ['en' => 'Previous post', 'es' => 'Publicación anterior'],
+        'post_nav_next' => ['en' => 'Next post', 'es' => 'Publicación siguiente'],
+        'post_nav_label' => ['en' => 'Post navigation', 'es' => 'Navegación entre publicaciones'],
         'stats_ip_origin' => ['en' => 'Origin IP', 'es' => 'IP de origen'],
 
         // --- Privacidad de la analítica (IP de origen) ---

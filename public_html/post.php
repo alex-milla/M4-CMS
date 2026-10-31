@@ -107,6 +107,9 @@ list($page_title, )    = t('page_post_title');
 list($_no_posts, )     = t('post_not_found');
 list($_back, )         = t('lbl_back_to_list');
 list($_published_on, ) = t('lbl_published_on');
+list($st_post_nav_prev, )   = t('post_nav_prev');
+list($st_post_nav_next, )   = t('post_nav_next');
+list($st_post_nav_label, )  = t('post_nav_label');
 list($_admin_menu, )       = t('post_admin_actions');
 list($_btn_edit, )         = t('btn_edit');
 list($_btn_delete, )       = t('btn_delete');
@@ -191,7 +194,37 @@ list($_status_updated, )   = t('msg_status_updated');
                 <div class="content"><?php echo postContentHtml($post['content']); ?></div>
                 </article>
 
+                <!-- Navegación entre publicaciones -->
+<?php
+$adjacent = getAdjacentPublishedPosts($post);
+$prevPost = $adjacent['prev'] ?? null;
+$nextPost = $adjacent['next'] ?? null;
+if ($prevPost || $nextPost):
+?>
+                <nav class="post-nav" aria-label="<?php echo htmlspecialchars($st_post_nav_label); ?>">
+<?php if ($prevPost): ?>
+                    <a class="post-nav__link post-nav__link--prev" href="<?php echo htmlspecialchars(postUrl($prevPost['slug'] !== '' ? $prevPost['slug'] : $prevPost['id'])); ?>">
+                        <?php echo finsec_icon('arrow-left', 14); ?>
+                        <span class="post-nav__text">
+                            <span class="post-nav__label"><?php echo htmlspecialchars($st_post_nav_prev); ?></span>
+                            <span class="post-nav__title"><?php echo htmlspecialchars($prevPost['title']); ?></span>
+                        </span>
+                    </a>
+<?php endif; ?>
+                    <a class="post-nav__back" href="index.php"><?php echo htmlspecialchars($_back); ?></a>
+<?php if ($nextPost): ?>
+                    <a class="post-nav__link post-nav__link--next" href="<?php echo htmlspecialchars(postUrl($nextPost['slug'] !== '' ? $nextPost['slug'] : $nextPost['id'])); ?>">
+                        <span class="post-nav__text">
+                            <span class="post-nav__label"><?php echo htmlspecialchars($st_post_nav_next); ?></span>
+                            <span class="post-nav__title"><?php echo htmlspecialchars($nextPost['title']); ?></span>
+                        </span>
+                        <?php echo finsec_icon('arrow-right', 14); ?>
+                    </a>
+<?php endif; ?>
+                </nav>
+<?php else: ?>
                 <p style="margin-top: 24px;"><a href="index.php"><?php echo finsec_icon('arrow-left', 14); ?> <?php echo htmlspecialchars($_back); ?></a></p>
+<?php endif; ?>
         </main>
 
         <footer>

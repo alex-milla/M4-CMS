@@ -68,6 +68,36 @@ function countPublishedPostsByCategory($category) {
     return (int)$stmt->fetchColumn();
 }
 
+// Publicaciones adyacentes a la indicada (navegación anterior/siguiente del post).
+//   prev = publicación más antigua (anterior en el listado)
+//   next = publicación más reciente (siguiente en el listado)
+// Solo se consideran las publicadas y ya visibles (las programadas no cuentan).
+function getAdjacentPublishedPosts($post) {
+    $result = ['prev' => null, 'next' => null];
+    try {
+        global $db;
+        if (!$db || !is_array($post) || empty($post['created_at'])) return $result;
+        $createdAt = (string)$post['created_at'];
+
+        // Anterior: la publicada más reciente que sea más antigua que esta
+        $stmt = $db->prepare("SELECT * FROM posts
+            WHERE status = 'published' AND created_at <= datetime('now','localtime') AND created_at < ?
+            ORDER BY created_at DESC, id DESC LIMIT 1");
+        $stmt->execute([$createdAt]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) $result['prev'] = $row;
+
+        // Siguiente: la publicada más antigua que sea más reciente que esta
+        $stmt = $db->prepare("SELECT * FROM posts
+            WHERE status = 'published' AND created_at <= datetime('now','localtime') AND created_at > ?
+            ORDER BY created_at ASC, id ASC LIMIT 1");
+        $stmt->execute([$createdAt]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) $result['next'] = $row;
+    } catch (\Throwable $e) { /* sin navegación */ }
+    return $result;
+}
+
 // Obtener etiquetas usadas en posts (lista de nombres unicos, ordenada)
 function getUsedTags() {
     global $db;
