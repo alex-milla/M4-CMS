@@ -876,7 +876,10 @@ footer {
 
 .post-nav {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* minmax(0, 1fr): las columnas miden exactamente la mitad del contenedor.
+       Con `1fr` (minmax(auto, 1fr)) un título largo ensancha la columna y la
+       fila se sale del ancho del contenido. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
     gap: 16px;
     margin-top: 28px;
@@ -888,6 +891,7 @@ footer {
     align-items: center;
     gap: 8px;
     max-width: 100%;
+    min-width: 0;
     color: var(--text-2);
     text-decoration: none;
 }
@@ -920,7 +924,7 @@ footer {
 }
 .post-nav__back:hover { color: var(--brand-500); }
 @media (max-width: 640px) {
-    .post-nav { grid-template-columns: 1fr; }
+    .post-nav { grid-template-columns: minmax(0, 1fr); }
     .post-nav__link--next { grid-column: 1; justify-self: start; text-align: left; }
     .post-nav__link--next .post-nav__text { order: -1; align-items: flex-start; }
 }
