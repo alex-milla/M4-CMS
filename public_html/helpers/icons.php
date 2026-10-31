@@ -38,6 +38,8 @@ function finsec_icon($name, $size = 16, $class = '') {
         'arrow-up'  => '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
         'arrow-down'=> '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
         'external-link' => '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+        'chart'     => '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16v-5"/><path d="M12 16V8"/><path d="M17 16v-3"/>',
+        'ban'       => '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
     ];
 
     $p = $paths[$name] ?? $paths['posts'];

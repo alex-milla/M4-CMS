@@ -56,6 +56,9 @@ function createTable() {
     $db->exec($sql_categories);
     $db->exec($sql_widgets);
 
+    // Tabla de IPs bloqueadas manualmente (anti-fuerza bruta)
+    if (function_exists('ensureBanTable')) ensureBanTable();
+
     // Migrar tabla posts existente: añadir campos nuevos si no existen
     $cols = $db->query("PRAGMA table_info(posts)")->fetchAll(PDO::FETCH_ASSOC);
     $col_names = array_column($cols, 'name');

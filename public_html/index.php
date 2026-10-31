@@ -9,8 +9,13 @@ include_once 'helpers/i18n.php';
 include_once 'helpers/content.php';
 include_once 'helpers/icons.php';
 include_once 'helpers/widgets.php';
+include_once 'db/analytics.php';
+include_once 'helpers/analytics.php';
 
 createTable();
+
+// Analítica web (registro server-side, en una BBDD SQLite independiente)
+analytics_track();
 
 $settings = getAllSettings();
 $siteTitle = $settings['site_title'] ?? 'M4 CMS';
@@ -97,6 +102,7 @@ list($_pinned_badge, )    = t('pinned_badge');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($siteTitle); ?></title>
     <link rel="stylesheet" href="assets/finsec.css">
+    <?php renderHeadExtras(); ?>
 </head>
 <body class="<?php echo $class; ?><?php echo $isLogged ? ' has-admin-bar' : ''; ?>">
     <?php if ($isLogged): ?>

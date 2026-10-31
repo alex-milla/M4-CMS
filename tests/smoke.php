@@ -9,7 +9,13 @@ $tmpDb = sys_get_temp_dir() . '/m4_smoke_' . getmypid() . '.db';
 @unlink($tmpDb);
 define('DB_PATH', $tmpDb);
 
+// La analítica usa su propia BBDD: también temporal en el smoke test
+$tmpAnalytics = sys_get_temp_dir() . '/m4_smoke_analytics_' . getmypid() . '.db';
+@unlink($tmpAnalytics);
+define('ANALYTICS_DB_PATH', $tmpAnalytics);
+
 require __DIR__ . '/../public_html/db/functions.php';
+require __DIR__ . '/../public_html/db/analytics.php';
 require __DIR__ . '/../public_html/helpers/i18n.php';
 require __DIR__ . '/../public_html/helpers/content.php';
 
@@ -43,7 +49,39 @@ check('siteBaseUrl', preg_match('#^https?://#', siteBaseUrl()) === 1);
 check('t() translation', t('nav_login')[0] !== 'nav_login');
 check('postExcerptHtml', strpos(postExcerptHtml(['content' => "a\n\nb"]), 'a') !== false);
 
+// --- Bloqueo de IPs (anti-fuerza bruta) ---
+check('banIp', banIp('198.51.100.5', 'smoke') === true);
+check('isIpBanned', isIpBanned('198.51.100.5') === true);
+check('banIp invalid', banIp('no-es-una-ip') === false);
+check('unbanIp', unbanIp('198.51.100.5') === true);
+check('isIpBanned after unban', isIpBanned('198.51.100.5') === false);
+
+// --- Logs filtrados por evento ---
+logAdminEvent('login_fail', 'smoke-user');
+$loginLogs = getAdminLogsFiltered(10, 0, ['login_fail']);
+check('filtered logs by event', count($loginLogs) >= 1);
+check('count filtered logs', countAdminLogsFiltered(['login_fail']) >= 1);
+
+// --- Analítica web ---
+$_SERVER['REQUEST_URI']      = '/';
+$_SERVER['REMOTE_ADDR']      = '203.0.113.9';
+$_SERVER['HTTP_USER_AGENT']  = 'Mozilla/5.0 (Windows NT 10.0) Chrome/120.0.0.0 Safari/537.36';
+$_SERVER['HTTP_REFERER']     = 'https://www.google.com/search?q=smoke';
+check('analytics_track', analytics_track(['path' => '/']) === true);
+$_SERVER['REQUEST_URI'] = '/mi-entrada';
+check('analytics_track post', analytics_track(['path' => '/mi-entrada']) === true);
+$_SERVER['HTTP_USER_AGENT'] = 'Googlebot/2.1 (+http://www.google.com/bot.html)';
+check('analytics ignores bots', analytics_track(['path' => '/bot']) === false);
+
+$stats = analytics_stats(30);
+check('analytics pageviews', (int)$stats['pageviews'] === 2);
+check('analytics visits', (int)$stats['visits'] >= 1);
+check('analytics entry pages', count($stats['entry_pages']) >= 1);
+check('analytics referrer search', (int)($stats['referrer_types']['search'] ?? 0) >= 1);
+check('analytics browser detected', array_key_exists('Chrome', $stats['browsers']));
+
 @unlink($tmpDb);
+@unlink($tmpAnalytics);
 
 if ($fail > 0) {
     fwrite(STDERR, $fail . " test(s) failed\n");

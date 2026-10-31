@@ -80,6 +80,7 @@ list($theme_lbl, )     = t('admin_theme_label');
 list($_lbl_lang, )     = t('lbl_lang');
 list($btn_new_post, )  = t('btn_new_post');
 list($nav_logs, )      = t('nav_logs');
+list($nav_stats, )     = t('nav_stats');
 list($nav_update, )    = t('nav_update');
 list($sys_section, )   = t('admin_system_section');
 list($nav_widgets, )   = t('nav_widgets');
@@ -179,6 +180,10 @@ list($quick_actions, ) = t('admin_quick_actions');
                 <a href="logs.php" class="admin-quick-action">
                     <span class="icon"><?php echo finsec_icon('history', 18); ?></span>
                     <span><?php echo htmlspecialchars($nav_logs); ?></span>
+                </a>
+                <a href="stats.php" class="admin-quick-action">
+                    <span class="icon"><?php echo finsec_icon('chart', 18); ?></span>
+                    <span><?php echo htmlspecialchars($nav_stats); ?></span>
                 </a>
                 <a href="update.php" class="admin-quick-action">
                     <span class="icon"><?php echo finsec_icon('download', 18); ?></span>

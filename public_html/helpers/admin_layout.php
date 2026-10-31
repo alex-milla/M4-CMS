@@ -29,6 +29,7 @@ function adminLayoutHead(array $opts = []) {
     list($manage_posts, )  = t('admin_manage_posts');
     list($nav_settings, )  = t('admin_settings');
     list($nav_logs, )      = t('nav_logs');
+    list($nav_stats, )     = t('nav_stats');
     list($nav_widgets, )   = t('nav_widgets');
     list($btn_new_post, )  = t('btn_new_post');
     list($nav_update, )    = t('nav_update');
@@ -86,6 +87,10 @@ function adminLayoutHead(array $opts = []) {
             <a href="logs.php"<?php echo $act('logs'); ?>>
                 <?php echo finsec_icon('history', 18); ?>
                 <span><?php echo htmlspecialchars($nav_logs); ?></span>
+            </a>
+            <a href="stats.php"<?php echo $act('stats'); ?>>
+                <?php echo finsec_icon('chart', 18); ?>
+                <span><?php echo htmlspecialchars($nav_stats); ?></span>
             </a>
 
             <div class="admin-nav-section"><?php echo htmlspecialchars($sys_section); ?></div>

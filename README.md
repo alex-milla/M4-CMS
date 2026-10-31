@@ -10,6 +10,9 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 - RSS feed, XML sitemap and custom 404 page
 - SEO-friendly URLs
 - Admin panel: dashboard KPIs, post management, bulk actions, settings and logs
+- **Built-in web analytics** (mini-Matomo): server-side tracking with no JavaScript and no third-party service, stored in a separate SQLite database (`db/analytics.db`). Visits, page views, entry pages, traffic sources, devices, browsers and response codes in a dedicated **Statistics** page
+- **Login attempt log** with a dedicated tab and manual **IP blocking** (anti brute force): blocked IPs are rejected at the login form
+- **Search engine verification**: paste the Google Search Console / Bing Webmaster Tools token in the settings and the matching `meta` tag is added to every public page
 - **Pinned posts**: pin up to 3 posts to the top of the homepage, with a custom order you can reorder from the admin list
 - Optional **Blocks module**: free-form content at the top of the homepage, above the post list (plain text with auto-linked URLs, sanitized basic HTML, or an auto-detected media embed), disabled by default
 - Hardened admin: CSRF token on every write, secure session cookies (`HttpOnly`/`SameSite`), login rate limiting, and security headers (CSP, `X-Frame-Options`, …)
@@ -48,15 +51,18 @@ Requests to **existing but blocked** resources keep the HTTP **403** status, and
 
 There are **no default credentials**. The admin account is created during `setup.php` and stored in `.env` / `admin_config.php`; there is no built-in username or password.
 
+The **Logs** panel has an *Activity* tab (everything) and a *Login attempts* tab with the successful and failed logins. From there you can **block an IP permanently**: blocked IPs are stored in the `banned_ips` table and are rejected by the login form, next to the existing temporary rate limit (8 failed attempts in 15 minutes).
+
 ## Project structure
 
 ```
 public_html/
 ├── assets/         Frontend styles (FinSec)
 ├── db/             Database connection and data functions
+│   ├── analytics.php  Web analytics (own SQLite database: db/analytics.db)
 │   └── backups/    Update backups (web access denied)
-├── entrada/        Admin panel (dashboard, posts, blocks, settings, logs, updates, login)
-├── helpers/        i18n, theme, icons, content, session, auth, CSRF and blocks helpers
+├── entrada/        Admin panel (dashboard, posts, blocks, settings, logs, statistics, updates, login)
+├── helpers/        i18n, theme, icons, content, session, auth, CSRF, analytics and blocks helpers
 ├── index.php       Public home
 ├── post.php        Single post
 ├── create.php      Create post
@@ -70,6 +76,15 @@ public_html/
 └── config.php      Bootstrap and configuration
 ```
 
+## Statistics
+
+The admin panel includes a lightweight, self-hosted web analytics module (**Statistics**), inspired by Matomo but designed for a small site:
+
+- Tracking is **server-side**: no JavaScript, no third-party requests, no cookies from external services. A visit is a 30-minute session identified by a first-party random cookie (`m4_sid`); without cookies a daily fingerprint is used instead.
+- Data is stored in **its own SQLite database** (`public_html/db/analytics.db`), completely independent from the CMS database.
+- **Privacy**: IP addresses are never stored in plain text (salted hash) and no personal data is collected. Raw rows are purged automatically after 180 days.
+- Reports: visits, page views, new visits, bounce rate, pages per visit, visits over time, most visited pages, entry pages, traffic sources (direct / search engines / social networks / other websites), devices, browsers and response codes (404/403).
+
 ## Themes
 
 Two themes are available: `finsec` (light, default) and `finsec-dark` (dark). Switch between them from the header toggle; the choice is persisted per session and in the database.
@@ -82,7 +97,7 @@ The admin panel includes an updater (`entrada/update.php`, under **System → Up
 - Managed files that no longer exist in the release are **removed**, and obsolete/dangerous utilities (`reset-admin.php`, `install.php`, `cleanup.php`, `setup.php` on installed sites…) are deleted.
 - Files that do not belong to the project are never touched.
 - A code backup is created in `public_html/db/backups/` before every update and restore.
-- `config.php`, `.env`, `admin_config.php` and the SQLite database are **never** overwritten.
+- `config.php`, `.env`, `admin_config.php` and the SQLite databases (`db/cms.db`, `db/analytics.db`) are **never** overwritten.
 - If the admin folder has been renamed, the updater remaps the package's `entrada/` folder to the current admin path automatically.
 - The repository is public, so no token is required. To raise the GitHub API rate limit, set a `GITHUB_TOKEN` environment variable.
 - The updater needs a ZIP extractor: the `zip` extension (`ZipArchive`), `PharData`, or the `unzip` binary.

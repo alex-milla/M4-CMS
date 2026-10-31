@@ -35,6 +35,14 @@ $theme404 = (isset($_COOKIE['m4_theme']) && $_COOKIE['m4_theme'] === 'finsec-dar
 $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
 $homeUrl = ($base === '' ? '' : $base) . '/index.php';
 $css  = ($base === '' ? '' : $base) . '/assets/finsec.css';
+
+// Analítica web (opcional): inclusiones protegidas para que 404.php
+// siga funcionando aunque falten los ficheros o la BBDD no esté disponible.
+@include_once __DIR__ . '/db/analytics.php';
+@include_once __DIR__ . '/helpers/analytics.php';
+if (function_exists('analytics_track')) {
+    @analytics_track(['status' => $status]);
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $lang; ?>">
@@ -43,6 +51,7 @@ $css  = ($base === '' ? '' : $base) . '/assets/finsec.css';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $t['title']; ?></title>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>">
+    <?php if (function_exists('renderHeadExtras')) { @renderHeadExtras(); } ?>
 </head>
 <body class="theme-<?php echo $theme404; ?>">
     <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:0 16px;">

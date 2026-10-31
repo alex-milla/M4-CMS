@@ -11,6 +11,7 @@ include_once '../helpers/i18n.php';
 include_once '../helpers/icons.php';
 include_once '../helpers/csrf.php';
 include_once '../helpers/admin_layout.php';
+include_once '../helpers/analytics.php';
 
 // Asegurar que las tablas existen antes de leer/escribir settings
 createTable();
@@ -56,6 +57,18 @@ list($nav_widgets, )   = t('nav_widgets');
 list($err_csrf, )          = t('err_csrf');
 list($err_creds_password, ) = t('err_creds_password');
 list($lbl_admin_curpass, ) = t('lbl_admin_current_password');
+list($lbl_webmaster, )     = t('cfg_webmaster_label');
+list($help_webmaster, )    = t('cfg_webmaster_help');
+list($lbl_wt_google, )     = t('lbl_wt_google');
+list($lbl_wt_bing, )       = t('lbl_wt_bing');
+list($ph_wt_google, )      = t('ph_wt_google');
+list($ph_wt_bing, )        = t('ph_wt_bing');
+list($lbl_wt_sitemap, )    = t('lbl_wt_sitemap');
+list($help_wt_sitemap, )   = t('help_wt_sitemap');
+list($btn_wt_google, )     = t('btn_wt_google_link');
+list($btn_wt_bing, )       = t('btn_wt_bing_link');
+
+$sitemapUrl = rtrim(siteBaseUrl(), '/') . '/sitemap.xml';
 
 $class = 'theme-' . htmlspecialchars($theme);
 
@@ -76,6 +89,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!empty($_POST['site_tagline'])) {
                 saveSetting('site_tagline', trim($_POST['site_tagline']));
+            }
+
+            // Tokens de verificación de buscadores (Google / Bing)
+            if (array_key_exists('wt_google_token', $_POST)) {
+                saveSetting('wt_google_token', m4_sanitize_verification_token($_POST['wt_google_token']));
+            }
+            if (array_key_exists('wt_bing_token', $_POST)) {
+                saveSetting('wt_bing_token', m4_sanitize_verification_token($_POST['wt_bing_token']));
             }
 
             // Cambios de cuenta admin (usuario o contraseña): exigen la
@@ -249,6 +270,34 @@ try {
                     <div class="admin-form-group">
                         <label for="current_password"><?php echo htmlspecialchars($lbl_pathpass); ?></label>
                         <input type="password" id="current_password" name="current_password" autocomplete="off" style="max-width:480px;">
+                    </div>
+                </div>
+
+                <!-- Verificación para buscadores (Google / Bing) -->
+                <div class="admin-card">
+                    <h3><?php echo finsec_icon('globe', 16); ?> <?php echo htmlspecialchars($lbl_webmaster); ?></h3>
+
+                    <p class="help-text" style="margin-bottom:12px;"><?php echo htmlspecialchars($help_webmaster); ?></p>
+
+                    <div class="admin-form-group">
+                        <label for="wt_google_token"><?php echo htmlspecialchars($lbl_wt_google); ?></label>
+                        <input type="text" id="wt_google_token" name="wt_google_token" value="<?php echo htmlspecialchars($settings['wt_google_token'] ?? ''); ?>" placeholder="<?php echo htmlspecialchars($ph_wt_google); ?>" autocomplete="off" class="mono" style="max-width:480px;">
+                    </div>
+
+                    <div class="admin-form-group">
+                        <label for="wt_bing_token"><?php echo htmlspecialchars($lbl_wt_bing); ?></label>
+                        <input type="text" id="wt_bing_token" name="wt_bing_token" value="<?php echo htmlspecialchars($settings['wt_bing_token'] ?? ''); ?>" placeholder="<?php echo htmlspecialchars($ph_wt_bing); ?>" autocomplete="off" class="mono" style="max-width:480px;">
+                    </div>
+
+                    <div class="admin-form-group">
+                        <label><?php echo htmlspecialchars($lbl_wt_sitemap); ?></label>
+                        <p class="help-text" style="margin-bottom:6px;"><?php echo htmlspecialchars($help_wt_sitemap); ?></p>
+                        <a href="<?php echo htmlspecialchars($sitemapUrl); ?>" class="btn-link" target="_blank" rel="noopener"><?php echo finsec_icon('external-link', 14); ?> <?php echo htmlspecialchars($sitemapUrl); ?></a>
+                    </div>
+
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                        <a href="https://search.google.com/search-console" class="btn-link" target="_blank" rel="noopener"><?php echo finsec_icon('external-link', 14); ?> <?php echo htmlspecialchars($btn_wt_google); ?></a>
+                        <a href="https://www.bing.com/webmasters" class="btn-link" target="_blank" rel="noopener"><?php echo finsec_icon('external-link', 14); ?> <?php echo htmlspecialchars($btn_wt_bing); ?></a>
                     </div>
                 </div>
 

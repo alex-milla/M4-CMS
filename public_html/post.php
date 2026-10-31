@@ -9,6 +9,8 @@ include_once 'helpers/i18n.php';
 include_once 'helpers/content.php';
 include_once 'helpers/icons.php';
 include_once __DIR__ . '/helpers/csrf.php';
+include_once __DIR__ . '/db/analytics.php';
+include_once __DIR__ . '/helpers/analytics.php';
 
 createTable();
 
@@ -81,6 +83,9 @@ if (!$post) {
     exit;
 }
 
+// Analítica web (solo cuando la publicación existe y es visible)
+analytics_track(['path' => '/' . rawurlencode((string)($post['slug'] !== '' ? $post['slug'] : $post['id']))]);
+
 // Theme (FinSec claro/oscuro)
 if (isset($_SESSION['theme'])) {
     $theme = normalizeTheme($_SESSION['theme']);
@@ -117,6 +122,7 @@ list($_status_updated, )   = t('msg_status_updated');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($post['title']); ?></title>
     <link rel="stylesheet" href="assets/finsec.css">
+    <?php renderHeadExtras(); ?>
 </head>
 <body class="<?php echo $class; ?>">
     <div class="container">

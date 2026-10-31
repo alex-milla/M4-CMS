@@ -63,6 +63,7 @@ $sensitive = [
     'setup.php',
     '.github_token',
     'db/cms.db',
+    'db/analytics.db',
     'README.md',
     '.gitignore',
 ];

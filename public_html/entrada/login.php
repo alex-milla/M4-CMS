@@ -38,6 +38,7 @@ list($btn_enter, )     = t('btn_login_enter');
 list($err_credentials, ) = t('err_user_pass_incorrect');
 list($err_csrf, )        = t('err_csrf');
 list($err_rate_limited, ) = t('err_login_rate_limited');
+list($err_ip_banned, )    = t('err_login_ip_banned');
 list($_back_site, )    = t('nav_back_to_site');
 
 // Título de marca: nombre del sitio desde settings
@@ -60,6 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!csrfValidate()) {
         $error = $err_csrf;
+    } elseif (isIpBanned($clientIp)) {
+        // IP bloqueada manualmente desde el panel (anti-fuerza bruta)
+        logAdminEvent('login_blocked', (string)$user . ' (banned ip)');
+        $error = $err_ip_banned;
     } elseif (loginAttemptsExceeded($clientIp)) {
         logAdminEvent('login_blocked', (string)$user);
         $error = $err_rate_limited;
