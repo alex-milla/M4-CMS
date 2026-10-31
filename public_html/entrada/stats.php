@@ -214,6 +214,90 @@ function stats_bar_row($label, $value, $max, $mono = false) {
         . '</div>';
 }
 
+/**
+ * Perfil del visitante desplegado en línea (debajo de la visita clicada).
+ * Muestra todas sus visitas en la ventana de retención con sus páginas.
+ */
+function stats_visitor_profile_panel($profile, $profileId, $labels) {
+    $st_profile        = $labels['profile'];
+    $st_profile_visits = $labels['profile_visits'];
+    $st_profile_actions= $labels['profile_actions'];
+    $st_profile_time   = $labels['profile_time'];
+    $st_profile_range  = $labels['profile_range'];
+    $st_ip_origin      = $labels['ip_origin'];
+    $st_close          = $labels['close_profile'];
+    $st_back           = $labels['back'];
+    $st_col_actions    = $labels['col_actions'];
+    $st_col_duration   = $labels['col_duration'];
+    $st_referrer       = $labels['referrer'];
+    $st_col_device     = $labels['col_device'];
+    $st_actions        = $labels['actions'];
+    $deviceLabels      = $labels['devices'];
+
+    ob_start();
+    ?>
+    <div class="visitor-profile">
+        <div class="visitor-profile__head">
+            <span class="visitor-profile__title">
+                <?php echo finsec_icon('eye', 14); ?> <?php echo htmlspecialchars($st_profile); ?>
+            </span>
+            <span class="visitor-profile__id mono">ID: <?php echo htmlspecialchars(substr((string)$profileId, 0, 12)); ?>…</span>
+<?php if (!empty($profile['ip'])): ?>
+            <span class="visitor-profile__id mono"><?php echo htmlspecialchars($st_ip_origin); ?>: <?php echo htmlspecialchars($profile['ip']); ?></span>
+<?php endif; ?>
+            <span class="visitor-profile__id"><?php echo htmlspecialchars($st_profile_range); ?> <?php echo htmlspecialchars(($profile['start'] ?? '') . ' → ' . ($profile['end'] ?? '')); ?></span>
+        </div>
+        <div class="visitor-profile__stats">
+            <span><strong><?php echo (int)$profile['visits']; ?></strong> <?php echo htmlspecialchars(strtolower($st_profile_visits)); ?></span>
+            <span><strong><?php echo (int)$profile['actions']; ?></strong> <?php echo htmlspecialchars(strtolower($st_profile_actions)); ?></span>
+            <span><strong><?php echo htmlspecialchars(stats_duration($profile['duration'])); ?></strong> <?php echo htmlspecialchars(strtolower($st_profile_time)); ?></span>
+        </div>
+        <div class="visitor-profile__visits">
+<?php foreach ($profile['log'] as $pv): ?>
+            <div class="profile-visit">
+                <div class="profile-visit__head">
+                    <span class="mono"><?php echo htmlspecialchars($pv['started_at']); ?></span>
+                    <span><?php echo (int)$pv['actions']; ?> <?php echo htmlspecialchars(strtolower($st_actions)); ?></span>
+                    <span><?php echo htmlspecialchars(stats_duration($pv['duration'])); ?></span>
+                    <span><?php echo htmlspecialchars($pv['referrer'] !== '' ? $pv['referrer'] : '—'); ?></span>
+                    <span class="mono"><?php echo htmlspecialchars($pv['ip'] !== '' ? $pv['ip'] : '—'); ?></span>
+                    <span><?php echo htmlspecialchars(($deviceLabels[$pv['device']] ?? $pv['device']) . ' · ' . $pv['browser'] . ' · ' . $pv['os']); ?></span>
+                </div>
+<?php
+$compact = stats_compact_actions($pv['actions_list'] ?? [], 10);
+if (!empty($compact['items'])):
+?>
+                <div class="profile-visit__actions">
+<?php foreach ($compact['items'] as $action): ?>
+                    <span class="profile-action">
+                        <span class="mono"><?php echo htmlspecialchars(substr((string)$action['at'], 11, 8)); ?></span>
+                        <span class="mono"><?php echo htmlspecialchars($action['path']); ?></span>
+<?php if ((int)$action['count'] > 1): ?>
+                        <span class="visit-action__count">&times;<?php echo (int)$action['count']; ?></span>
+<?php endif; ?>
+<?php if ((int)$action['status'] >= 400): ?>
+                        <span class="badge danger"><?php echo (int)$action['status']; ?></span>
+<?php endif; ?>
+                    </span>
+<?php endforeach; ?>
+<?php if ($compact['hidden'] > 0): ?>
+                    <span class="profile-action profile-action--more">+<?php echo (int)$compact['hidden']; ?> <?php echo htmlspecialchars(strtolower($st_actions)); ?></span>
+<?php endif; ?>
+                </div>
+<?php endif; ?>
+            </div>
+<?php endforeach; ?>
+        </div>
+        <div class="visitor-profile__foot">
+            <a class="btn-link" href="<?php echo htmlspecialchars($labels['close_url']); ?>">
+                <?php echo finsec_icon('x', 14); ?> <?php echo htmlspecialchars($st_close); ?>
+            </a>
+        </div>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
 // ------------------------------------------------------------
 //  Traducciones
 // ------------------------------------------------------------
@@ -365,65 +449,36 @@ $deviceLabels = ['desktop' => $st_desktop, 'mobile' => $st_mobile, 'tablet' => $
                 </form>
             </div>
 
-<?php if ($profile !== null): ?>
-            <!-- Perfil del visitante -->
-            <div class="admin-card" id="visitor-profile">
-                <h3><?php echo finsec_icon('eye', 16); ?> <?php echo htmlspecialchars($st_profile); ?></h3>
-                <?php if (empty($profile['log'])): ?>
-                    <p class="help-text"><?php echo htmlspecialchars($st_profile_none); ?></p>
-                <?php else: ?>
-                <div class="admin-stats">
-                    <div class="admin-stat-card">
-                        <span class="icon"><?php echo finsec_icon('globe', 18); ?></span>
-                        <div class="value"><?php echo (int)$profile['visits']; ?></div>
-                        <div class="label"><?php echo htmlspecialchars($st_profile_visits); ?></div>
-                    </div>
-                    <div class="admin-stat-card">
-                        <span class="icon"><?php echo finsec_icon('posts', 18); ?></span>
-                        <div class="value"><?php echo (int)$profile['actions']; ?></div>
-                        <div class="label"><?php echo htmlspecialchars($st_profile_actions); ?></div>
-                    </div>
-                    <div class="admin-stat-card">
-                        <span class="icon"><?php echo finsec_icon('history', 18); ?></span>
-                        <div class="value"><?php echo htmlspecialchars(stats_duration($profile['duration'])); ?></div>
-                        <div class="label"><?php echo htmlspecialchars($st_profile_time); ?></div>
-                    </div>
-                </div>
-                <p class="help-text mono" style="margin-top:12px;">
-                    ID: <?php echo htmlspecialchars(substr((string)$profileId, 0, 12)); ?>…
-<?php if (!empty($profile['ip'])): ?>
-                    · <?php echo htmlspecialchars($st_ip_origin); ?>: <strong class="mono"><?php echo htmlspecialchars($profile['ip']); ?></strong>
-<?php endif; ?>
-                    · <?php echo htmlspecialchars($st_profile_range); ?> <?php echo htmlspecialchars(($profile['start'] ?? '') . ' → ' . ($profile['end'] ?? '')); ?>
-                </p>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th><?php echo htmlspecialchars(t('tbl_col_date')[0]); ?></th>
-                                <th><?php echo htmlspecialchars($st_col_actions); ?></th>
-                                <th><?php echo htmlspecialchars($st_col_duration); ?></th>
-                                <th><?php echo htmlspecialchars($st_referrer); ?></th>
-                                <th><?php echo htmlspecialchars($st_ip_origin); ?></th>
-                                <th><?php echo htmlspecialchars($st_col_device); ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-<?php foreach ($profile['log'] as $pv): ?>
-                            <tr>
-                                <td class="mono"><?php echo htmlspecialchars($pv['started_at']); ?></td>
-                                <td><?php echo (int)$pv['actions']; ?></td>
-                                <td><?php echo htmlspecialchars(stats_duration($pv['duration'])); ?></td>
-                                <td><?php echo htmlspecialchars($pv['referrer'] !== '' ? $pv['referrer'] : '—'); ?></td>
-                                <td class="mono"><?php echo htmlspecialchars($pv['ip'] !== '' ? $pv['ip'] : '—'); ?></td>
-                                <td><?php echo htmlspecialchars(($deviceLabels[$pv['device']] ?? $pv['device']) . ' · ' . $pv['browser'] . ' · ' . $pv['os']); ?></td>
-                            </tr>
-<?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <p style="margin-top:12px;"><a class="btn-link" href="?period=<?php echo htmlspecialchars($preset); ?>&amp;from=<?php echo htmlspecialchars($start); ?>&amp;to=<?php echo htmlspecialchars($end); ?>"><?php echo finsec_icon('arrow-left', 14); ?> <?php echo htmlspecialchars($st_back); ?></a></p>
-                <?php endif; ?>
+<?php
+// El perfil se despliega EN LÍNEA bajo la visita clicada (no en un bloque aparte).
+// Si el visitante no aparece entre las visitas visibles, se muestra arriba del registro.
+$profilePlaced = false;
+$profileBaseUrl = '?period=' . urlencode($preset) . '&amp;from=' . urlencode($start) . '&amp;to=' . urlencode($end);
+// Visita bajo la que se despliega el perfil (la clicada). Si no se indica,
+// se despliega bajo la primera visita visible de ese visitante.
+$profileVisitId = trim((string)($_GET['visit'] ?? ''));
+$profileLabels = [
+    'profile'         => $st_profile,
+    'profile_visits'  => $st_profile_visits,
+    'profile_actions' => $st_profile_actions,
+    'profile_time'    => $st_profile_time,
+    'profile_range'   => $st_profile_range,
+    'ip_origin'       => $st_ip_origin,
+    'close_profile'   => t('stats_close_profile')[0],
+    'back'            => $st_back,
+    'col_actions'     => $st_col_actions,
+    'col_duration'    => $st_col_duration,
+    'referrer'        => $st_referrer,
+    'col_device'      => $st_col_device,
+    'actions'         => $st_actions,
+    'devices'         => $deviceLabels,
+    'close_url'       => $profileBaseUrl,
+];
+?>
+<?php if ($profile !== null && empty($profile['log'])): ?>
+            <div class="msg-banner info">
+                <?php echo finsec_icon('alert', 16); ?>
+                <span><?php echo htmlspecialchars($st_profile_none); ?></span>
             </div>
 <?php endif; ?>
 
@@ -544,7 +599,14 @@ foreach ($cards as $card):
                 <?php else: ?>
                     <div class="visit-log">
 <?php foreach ($stats['visit_log'] as $visit): ?>
-                        <div class="visit-card">
+<?php
+$visitAnchor = 'visit-' . substr((string)$visit['visit_id'], 0, 12);
+$isProfileOpen = ($profile !== null && !empty($visit['visitor_id']) && $visit['visitor_id'] === $profileId);
+if ($isProfileOpen && $profileVisitId !== '' && (string)$visit['visit_id'] !== $profileVisitId) {
+    $isProfileOpen = false;   // el perfil se despliega solo bajo la visita clicada
+}
+?>
+                        <div class="visit-card<?php echo $isProfileOpen ? ' visit-card--profile' : ''; ?>" id="<?php echo htmlspecialchars($visitAnchor); ?>">
                             <div class="visit-card__head">
                                 <span class="visit-card__date mono"><?php echo htmlspecialchars($visit['started_at']); ?></span>
                                 <span class="visit-card__meta">
@@ -596,13 +658,31 @@ foreach ($compact['items'] as $action):
                             </div>
 <?php if (!empty($visit['visitor_id'])): ?>
                             <div class="visit-card__foot">
-                                <a class="btn-link" href="?period=<?php echo htmlspecialchars($preset); ?>&amp;from=<?php echo htmlspecialchars($start); ?>&amp;to=<?php echo htmlspecialchars($end); ?>&amp;profile=<?php echo urlencode((string)$visit['visitor_id']); ?>#visitor-profile">
+<?php if ($isProfileOpen): ?>
+                                <a class="btn-link" href="<?php echo htmlspecialchars($profileBaseUrl); ?>">
+                                    <?php echo finsec_icon('x', 14); ?> <?php echo htmlspecialchars(t('stats_close_profile')[0]); ?>
+                                </a>
+<?php else: ?>
+                                <a class="btn-link" href="<?php echo htmlspecialchars($profileBaseUrl); ?>&amp;profile=<?php echo urlencode((string)$visit['visitor_id']); ?>&amp;visit=<?php echo urlencode((string)$visit['visit_id']); ?>#<?php echo htmlspecialchars($visitAnchor); ?>">
                                     <?php echo finsec_icon('eye', 14); ?> <?php echo htmlspecialchars($st_profile); ?>
                                 </a>
+<?php endif; ?>
                             </div>
+<?php endif; ?>
+<?php if ($isProfileOpen && $profile !== null): ?>
+                            <!-- Perfil del visitante desplegado en línea -->
+                            <?php echo stats_visitor_profile_panel($profile, $profileId, $profileLabels); ?>
+                            <?php $profilePlaced = true; ?>
 <?php endif; ?>
                         </div>
 <?php endforeach; ?>
+<?php if ($profile !== null && !$profilePlaced && !empty($profile['log'])): ?>
+                        <!-- El visitante no está entre las visitas visibles: se muestra arriba -->
+                        <div class="admin-card" id="visitor-profile">
+                            <h3><?php echo finsec_icon('eye', 16); ?> <?php echo htmlspecialchars($st_profile); ?></h3>
+                            <?php echo stats_visitor_profile_panel($profile, $profileId, $profileLabels); ?>
+                        </div>
+<?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>

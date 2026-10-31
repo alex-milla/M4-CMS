@@ -179,6 +179,8 @@ check('modo anon vuelve a anonimizar', analytics_store_ip() === '8.8.8.0');
 // El perfil del visitante cubre toda la retención (no solo el periodo visible)
 $profileFull = analytics_visitor_profile(analytics_db(), $visitorId);
 check('perfil con retencion completa', (int)$profileFull['visits'] >= 1);
+check('perfil incluye las paginas de cada visita', !empty($profileFull['log'][0]['actions_list']));
+check('perfil con rango informado', ($profileFull['start'] ?? '') !== '' && ($profileFull['end'] ?? '') !== '');
 
 @unlink($tmpDb);
 @unlink($tmpAnalytics);

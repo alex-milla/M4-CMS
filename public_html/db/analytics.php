@@ -811,12 +811,33 @@ function analytics_visitor_profile($pdo, $visitorId, $start = null, $end = null)
              SELECT visit_id, visitor_id, referrer_host, referrer_type, device, browser, os, ip,
                     started_at, last_at, actions
              FROM f WHERE visitor_id = ? ORDER BY started_at DESC LIMIT 100", [$start, $end, $visitorId]);
+
+        // Páginas vistas de cada visita del visitante
+        $actions = [];
+        $rowsAct = analytics_query($pdo,
+            "SELECT visit_id, path, status, created_at, search_term FROM pageviews
+             WHERE date(created_at) BETWEEN ? AND ? AND (" . analytics_page_filter_sql() . ") AND visit_id IN (
+                 SELECT visit_id FROM pageviews
+                 WHERE date(created_at) BETWEEN ? AND ? AND visitor_id = ?
+                 GROUP BY visit_id
+             )
+             ORDER BY created_at ASC", [$start, $end, $start, $end, $visitorId]);
+        foreach ($rowsAct as $row) {
+            $actions[(string)$row['visit_id']][] = [
+                'path'   => (string)$row['path'],
+                'status' => (int)$row['status'],
+                'at'     => (string)$row['created_at'],
+                'search' => (string)($row['search_term'] ?? ''),
+            ];
+        }
+
         foreach ($rows as $row) {
             $started = (string)$row['started_at'];
             $last    = (string)$row['last_at'];
             $duration = ($started !== '' && $last !== '') ? max(0, strtotime($last) - strtotime($started)) : 0;
+            $vid = (string)$row['visit_id'];
             $profile['log'][] = [
-                'visit_id'   => (string)$row['visit_id'],
+                'visit_id'   => $vid,
                 'started_at' => $started,
                 'duration'   => $duration,
                 'actions'    => (int)$row['actions'],
@@ -826,6 +847,7 @@ function analytics_visitor_profile($pdo, $visitorId, $start = null, $end = null)
                 'browser'    => (string)($row['browser'] ?? 'other'),
                 'os'         => (string)($row['os'] ?? 'other'),
                 'ip'         => (string)($row['ip'] ?? ''),
+                'actions_list' => $actions[$vid] ?? [],
             ];
             $profile['visits']++;
             $profile['actions'] += (int)$row['actions'];

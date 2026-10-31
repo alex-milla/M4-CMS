@@ -382,6 +382,7 @@ function t($key) {
         'stats_legend_views' => ['en' => 'Page views', 'es' => 'Páginas vistas'],
         'stats_period_label' => ['en' => 'Period', 'es' => 'Periodo'],
         'stats_profile_range' => ['en' => 'Visits from', 'es' => 'Visitas desde'],
+        'stats_close_profile' => ['en' => 'Close profile', 'es' => 'Cerrar perfil'],
         'stats_ip_origin' => ['en' => 'Origin IP', 'es' => 'IP de origen'],
 
         // --- Privacidad de la analítica (IP de origen) ---
