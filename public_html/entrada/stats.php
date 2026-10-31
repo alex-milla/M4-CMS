@@ -12,6 +12,9 @@ include_once '../helpers/i18n.php';
 include_once '../helpers/icons.php';
 include_once '../helpers/admin_layout.php';
 
+// Asegurar que las tablas existen (instalación nueva o BBDD vacía)
+createTable();
+
 // Rango de tiempo
 $days = (int)($_GET['days'] ?? 30);
 if (!in_array($days, [7, 30, 90], true)) $days = 30;

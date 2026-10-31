@@ -8,21 +8,19 @@
 //  Todo es tolerante a fallos: si la BBDD no está disponible, la web se
 //  sirve igual, simplemente sin las meta-etiquetas.
 
+require_once __DIR__ . '/settings.php';
+
 // Lee un ajuste del CMS. Usa getSetting() si está disponible y, si no
 // (por ejemplo en 404.php, que va sin dependencias), lee la tabla
 // 'settings' directamente. Devuelve null si no existe.
+if (!function_exists('m4_setting_value')) {
 function m4_setting_value($key) {
     try {
         if (function_exists('getSetting')) {
             return getSetting($key);
         }
-        static $pdo = null;
-        if ($pdo === null) {
-            $path = defined('DB_PATH') ? DB_PATH : dirname(__DIR__) . '/db/cms.db';
-            if (!is_file($path)) return null;
-            $pdo = new PDO('sqlite:' . $path);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        }
+        $pdo = m4_settings_pdo();
+        if (!$pdo) return null;
         $stmt = $pdo->prepare("SELECT value FROM settings WHERE key_name = ?");
         $stmt->execute([(string)$key]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -30,6 +28,7 @@ function m4_setting_value($key) {
     } catch (\Throwable $e) {
         return null;
     }
+}
 }
 
 // Limpia un token de verificación (solo caracteres seguros y sin comillas).

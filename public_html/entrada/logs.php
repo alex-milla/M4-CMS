@@ -10,7 +10,11 @@ include_once '../helpers/theme.php';
 include_once '../helpers/i18n.php';
 include_once '../helpers/icons.php';
 include_once '../helpers/csrf.php';
+include_once '../helpers/client.php';
 include_once '../helpers/admin_layout.php';
+
+// Asegurar que las tablas existen (instalación nueva o BBDD vacía)
+createTable();
 
 // Purgar logs viejos en cada visita (logrotate sin cron)
 purgeOldLogs(90);
@@ -128,6 +132,10 @@ list($msg_ip_banned, )  = t('msg_ip_banned');
 list($msg_ip_unbanned,) = t('msg_ip_unbanned');
 list($err_ip_ban_failed,) = t('err_ip_ban_failed');
 list($err_csrf, )       = t('err_csrf');
+list($lbl_ua, )         = t('logs_col_ua');
+list($badge_proxy, )    = t('logs_proxy_badge');
+list($badge_bot, )      = t('logs_bot_badge');
+list($help_client_ip, ) = t('logs_help_client_ip');
 ?>
 <?php adminLayoutHead([
     'title'  => $page_title,
@@ -148,6 +156,10 @@ list($err_csrf, )       = t('err_csrf');
                     <?php echo finsec_icon('alert', 16); ?>
                     <span><?php echo htmlspecialchars($err_txt); ?></span>
                 </div>
+            <?php endif; ?>
+
+            <?php if ($isLoginView): ?>
+                <p class="help-text" style="margin-bottom:12px;"><?php echo htmlspecialchars($help_client_ip); ?></p>
             <?php endif; ?>
 
             <!-- Pestañas de vista -->
@@ -216,12 +228,19 @@ list($err_csrf, )       = t('err_csrf');
 <?php endif; ?>
                             <th><?php echo htmlspecialchars($tbl_ip); ?></th>
 <?php if ($isLoginView): ?>
+                            <th><?php echo htmlspecialchars($lbl_ua); ?></th>
                             <th><?php echo htmlspecialchars($lbl_actions); ?></th>
 <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
 <?php foreach ($logs as $log): ?>
+<?php
+$rowIp = (string)($log['ip'] ?? '');
+$rowUa = (string)($log['ua'] ?? '');
+$isProxyIp = ($rowIp !== '' && function_exists('m4_is_trusted_proxy_ip') && m4_is_trusted_proxy_ip($rowIp));
+$isBotUa = ($rowUa !== '' && function_exists('m4_ua_is_bot') && m4_ua_is_bot($rowUa));
+?>
                         <tr>
                             <td class="mono"><?php echo htmlspecialchars($log['created_at']); ?></td>
                             <td><span class="badge scheduled"><?php echo htmlspecialchars($log['event']); ?></span></td>
@@ -230,11 +249,16 @@ list($err_csrf, )       = t('err_csrf');
 <?php else: ?>
                             <td><?php echo htmlspecialchars($log['detail'] ?? ''); ?></td>
 <?php endif; ?>
-                            <td class="mono"><?php echo htmlspecialchars($log['ip'] ?? ''); ?><?php if ($isLoginView && !empty($bannedMap[(string)($log['ip'] ?? '')])): ?> <span class="badge danger"><?php echo htmlspecialchars(t('logs_banned_badge')[0]); ?></span><?php endif; ?></td>
+                            <td class="mono"><?php echo htmlspecialchars($rowIp); ?><?php if ($isLoginView && !empty($bannedMap[$rowIp])): ?> <span class="badge danger"><?php echo htmlspecialchars(t('logs_banned_badge')[0]); ?></span><?php endif; ?><?php if ($isLoginView && $isProxyIp): ?> <span class="badge draft"><?php echo htmlspecialchars($badge_proxy); ?></span><?php endif; ?></td>
+<?php if ($isLoginView): ?>
+                            <td title="<?php echo htmlspecialchars($rowUa); ?>">
+                                <?php echo htmlspecialchars($rowUa !== '' ? m4_ua_summary($rowUa) : '—'); ?>
+<?php if ($isBotUa): ?> <span class="badge danger"><?php echo htmlspecialchars($badge_bot); ?></span><?php endif; ?>
+                            </td>
+<?php endif; ?>
 <?php if ($isLoginView): ?>
                             <td>
-<?php $rowIp = (string)($log['ip'] ?? ''); ?>
-<?php if ($rowIp !== '' && $rowIp !== 'unknown'): ?>
+<?php if ($rowIp !== '' && $rowIp !== 'unknown' && !$isProxyIp): ?>
 <?php if (!empty($bannedMap[$rowIp])): ?>
                                 <form method="POST" action="?view=login" class="inline-form">
                                     <?php echo csrfField(); ?>
@@ -250,6 +274,8 @@ list($err_csrf, )       = t('err_csrf');
                                     <button type="submit" class="btn-link danger"><?php echo finsec_icon('ban', 14); ?> <?php echo htmlspecialchars($btn_ban_ip); ?></button>
                                 </form>
 <?php endif; ?>
+<?php elseif ($isProxyIp): ?>
+                                <span class="help-text"><?php echo htmlspecialchars($badge_proxy); ?></span>
 <?php endif; ?>
                             </td>
 <?php endif; ?>

@@ -12,6 +12,7 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 - Admin panel: dashboard KPIs, post management, bulk actions, settings and logs
 - **Built-in web analytics** (mini-Matomo): server-side tracking with no JavaScript and no third-party service, stored in a separate SQLite database (`db/analytics.db`). Visits, page views, entry pages, traffic sources, devices, browsers and response codes in a dedicated **Statistics** page
 - **Login attempt log** with a dedicated tab and manual **IP blocking** (anti brute force): blocked IPs are rejected at the login form
+- **Real client IP behind a CDN**: Cloudflare (and any other trusted proxy) is detected automatically, so the logs, the rate limit and the blocked-IP list work with the visitor's real address instead of the CDN edge
 - **Search engine verification**: paste the Google Search Console / Bing Webmaster Tools token in the settings and the matching `meta` tag is added to every public page
 - **Pinned posts**: pin up to 3 posts to the top of the homepage, with a custom order you can reorder from the admin list
 - Optional **Blocks module**: free-form content at the top of the homepage, above the post list (plain text with auto-linked URLs, sanitized basic HTML, or an auto-detected media embed), disabled by default
@@ -51,7 +52,13 @@ Requests to **existing but blocked** resources keep the HTTP **403** status, and
 
 There are **no default credentials**. The admin account is created during `setup.php` and stored in `.env` / `admin_config.php`; there is no built-in username or password.
 
-The **Logs** panel has an *Activity* tab (everything) and a *Login attempts* tab with the successful and failed logins. From there you can **block an IP permanently**: blocked IPs are stored in the `banned_ips` table and are rejected by the login form, next to the existing temporary rate limit (8 failed attempts in 15 minutes).
+The **Logs** panel has an *Activity* tab (everything) and a *Login attempts* tab with the successful and failed logins, the client IP and the user agent (bots are flagged). From there you can **block an IP permanently**: blocked IPs are stored in the `banned_ips` table and are rejected by the login form, next to the existing temporary rate limit (8 failed attempts in 15 minutes).
+
+### Client IP behind a CDN or reverse proxy
+
+If the site runs behind Cloudflare (or another proxy), the CMS resolves the **real visitor IP** from `CF-Connecting-IP` / `X-Forwarded-For`. Those headers are only trusted when the direct connection (`REMOTE_ADDR`) belongs to a trusted proxy, so nobody can fake their IP to dodge the rate limit or the blocked-IP list. Cloudflare's published ranges are built in; other proxies can be added in **Settings → Trusted proxies** as IP addresses or CIDR ranges.
+
+Addresses belonging to a CDN edge are shown with a `proxy` badge and **cannot be blocked**: banning one would lock out every visitor sharing that edge.
 
 ## Project structure
 
@@ -62,7 +69,7 @@ public_html/
 │   ├── analytics.php  Web analytics (own SQLite database: db/analytics.db)
 │   └── backups/    Update backups (web access denied)
 ├── entrada/        Admin panel (dashboard, posts, blocks, settings, logs, statistics, updates, login)
-├── helpers/        i18n, theme, icons, content, session, auth, CSRF, analytics and blocks helpers
+├── helpers/        i18n, theme, icons, content, session, auth, CSRF, client IP, analytics and blocks helpers
 ├── index.php       Public home
 ├── post.php        Single post
 ├── create.php      Create post

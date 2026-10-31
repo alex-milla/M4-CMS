@@ -26,6 +26,11 @@ if (!defined('ANALYTICS_COOKIE'))  define('ANALYTICS_COOKIE', 'm4_sid');
 if (!defined('ANALYTICS_SALT'))    define('ANALYTICS_SALT', 'm4-analytics-v1');
 if (!defined('ANALYTICS_RETENTION_DAYS')) define('ANALYTICS_RETENTION_DAYS', 180);
 
+// IP real del cliente (resuelve proxies/CDN como Cloudflare).
+if (!function_exists('m4_client_ip')) {
+    @include_once __DIR__ . '/../helpers/client.php';
+}
+
 // ------------------------------------------------------------
 //  Conexión y esquema
 // ------------------------------------------------------------
@@ -87,8 +92,10 @@ function analytics_user_agent() {
 
 // Hash salado de la IP (nunca se almacena en claro).
 function analytics_ip_hash() {
-    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
-    return hash_hmac('sha256', $ip, ANALYTICS_SALT);
+    $ip = function_exists('m4_client_ip')
+        ? m4_client_ip()
+        : (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    return hash_hmac('sha256', (string)$ip, ANALYTICS_SALT);
 }
 
 // ¿Es un bot/rastreador? No se registran (inflan las estadísticas).

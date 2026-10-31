@@ -15,7 +15,8 @@ function adminLayoutHead(array $opts = []) {
     $h1           = (string)($opts['h1'] ?? $title);
     $logo         = (string)($opts['logo'] ?? $title);
     $blogName     = function_exists('getSetting') ? (string)(getSetting('site_title') ?? '') : '';
-    if ($blogName === '') $blogName = t('page_m4_cms_header');
+    // t() devuelve [texto, idioma]: hay que quedarse con el texto
+    if ($blogName === '') $blogName = (string)(t('page_m4_cms_header')[0] ?? 'M4 CMS');
     $active       = (string)($opts['active'] ?? '');
     $theme        = (string)($opts['theme'] ?? 'finsec');
     $themeToggle  = ($theme === 'finsec-dark') ? 'finsec' : 'finsec-dark';

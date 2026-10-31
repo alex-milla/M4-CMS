@@ -54,7 +54,8 @@ try {
 // --- Credential verification: verifyAdminCredential() vive en db/functions.php ---
 
 $error = null;
-$clientIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+// IP real del cliente (detrás de Cloudflare/proxy se resuelve la IP del visitante)
+$clientIp = function_exists('m4_client_ip') ? m4_client_ip() : ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $_POST['user'] ?? '';
     $pass = $_POST['password'] ?? '';

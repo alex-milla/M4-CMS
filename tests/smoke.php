@@ -62,6 +62,30 @@ $loginLogs = getAdminLogsFiltered(10, 0, ['login_fail']);
 check('filtered logs by event', count($loginLogs) >= 1);
 check('count filtered logs', countAdminLogsFiltered(['login_fail']) >= 1);
 
+// --- IP real del cliente (proxy / CDN) ---
+$_SERVER['REMOTE_ADDR'] = '8.8.8.8';
+$_SERVER['HTTP_CF_CONNECTING_IP'] = '9.9.9.9';
+check('client ip ignora cabeceras no confiables', m4_client_ip() === '8.8.8.8');
+$_SERVER['REMOTE_ADDR'] = '173.245.48.5';
+check('client ip detras de cloudflare', m4_client_ip() === '9.9.9.9');
+unset($_SERVER['HTTP_CF_CONNECTING_IP']);
+$_SERVER['REMOTE_ADDR'] = '8.8.8.8';
+check('proxy ip detectada', m4_is_trusted_proxy_ip('173.245.48.5') === true);
+check('ip normal no es proxy', m4_is_trusted_proxy_ip('1.1.1.1') === false);
+
+// --- Las IPs de proxy no se pueden bloquear ---
+check('banIp rechaza IP de proxy', banIp('173.245.48.5', 'proxy') === false);
+check('proxy no queda baneada', isIpBanned('173.245.48.5') === false);
+
+// --- User-Agent en los eventos de login ---
+$_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (Windows NT 10.0) Chrome/120.0.0.0 Safari/537.36';
+logAdminEvent('login_fail', 'smoke-ua');
+$uaLogs = getAdminLogsFiltered(10, 0, ['login_fail']);
+$storedUa = !empty($uaLogs[0]['ua']) ? (string)$uaLogs[0]['ua'] : '';
+check('login_fail guarda user agent', strpos($storedUa, 'Chrome') !== false);
+$logCols = array_column($GLOBALS['db']->query("PRAGMA table_info(admin_logs)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+check('admin_logs.ua existe', in_array('ua', $logCols));
+
 // --- Analítica web ---
 $_SERVER['REQUEST_URI']      = '/';
 $_SERVER['REMOTE_ADDR']      = '203.0.113.9';

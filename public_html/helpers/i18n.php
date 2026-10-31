@@ -344,6 +344,15 @@ function t($key) {
         'msg_ip_unbanned' => ['en' => 'The IP address has been unblocked.', 'es' => 'La dirección IP ha sido desbloqueada.'],
         'err_ip_ban_failed' => ['en' => 'The operation could not be completed (invalid IP?).', 'es' => 'No se ha podido completar la operación (¿IP no válida?).'],
         'err_login_ip_banned' => ['en' => 'Access blocked from this IP address.', 'es' => 'Acceso bloqueado desde esta dirección IP.'],
+        'logs_col_ua' => ['en' => 'Agent', 'es' => 'Agente'],
+        'logs_proxy_badge' => ['en' => 'proxy', 'es' => 'proxy'],
+        'logs_bot_badge' => ['en' => 'bot', 'es' => 'bot'],
+        'logs_help_client_ip' => ['en' => 'The IP shown is the real visitor address (resolved through Cloudflare or your reverse proxy). Requests marked as "proxy" come from a CDN edge and cannot be blocked.', 'es' => 'La IP mostrada es la dirección real del visitante (resuelta a través de Cloudflare o de tu proxy inverso). Las peticiones marcadas como "proxy" llegan desde un nodo del CDN y no se pueden bloquear.'],
+
+        // --- Proxies de confianza ---
+        'cfg_proxy_label' => ['en' => 'Trusted proxies', 'es' => 'Proxies de confianza'],
+        'cfg_proxy_help' => ['en' => 'If your site runs behind a CDN or reverse proxy, the CMS needs to know which addresses may send the real visitor IP. Cloudflare is detected automatically; add any other proxy (Nginx, HAProxy, a private network...) here, as IP addresses or CIDR ranges, separated by commas. Only requests coming from these addresses are trusted, so nobody can fake their IP.', 'es' => 'Si tu web está detrás de un CDN o un proxy inverso, el CMS necesita saber qué direcciones pueden enviar la IP real del visitante. Cloudflare se detecta automáticamente; añade aquí cualquier otro proxy (Nginx, HAProxy, una red privada...) como direcciones IP o rangos CIDR separados por comas. Solo se confían las peticiones que llegan desde esas direcciones, de modo que nadie puede falsear su IP.'],
+        'cfg_proxy_list' => ['en' => 'Additional proxy addresses (IP or CIDR)', 'es' => 'Direcciones de proxy adicionales (IP o CIDR)'],
 
         // --- Verificación para buscadores (Google / Bing) ---
         'cfg_webmaster_label' => ['en' => 'Search engine verification', 'es' => 'Verificación para buscadores'],

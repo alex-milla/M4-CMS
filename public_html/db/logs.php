@@ -2,6 +2,8 @@
 // Registro de actividad y anti-fuerza bruta del login.
 // Parte del agregador db/functions.php.
 
+require_once __DIR__ . '/../helpers/client.php';
+
 // Crear tabla de logs si no existe
 function ensureLogTable() {
     global $db;
@@ -11,8 +13,17 @@ function ensureLogTable() {
         event TEXT NOT NULL,
         detail TEXT,
         ip TEXT,
+        ua TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
+
+    // Migración: columna 'ua' (User-Agent) en instalaciones existentes
+    try {
+        $cols = array_column($db->query("PRAGMA table_info(admin_logs)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+        if (!in_array('ua', $cols, true)) {
+            $db->exec("ALTER TABLE admin_logs ADD COLUMN ua TEXT");
+        }
+    } catch (\Throwable $e) { /* la columna es opcional */ }
 }
 
 // Registrar un evento de admin
@@ -21,9 +32,16 @@ function logAdminEvent($event, $detail = '') {
         global $db;
         if (!$db) return;
         ensureLogTable();
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        $stmt = $db->prepare("INSERT INTO admin_logs (event, detail, ip) VALUES (?, ?, ?)");
-        $stmt->execute([$event, $detail, $ip]);
+        // IP real del cliente (resuelve Cloudflare/proxies de confianza)
+        $ip = function_exists('m4_client_ip') ? m4_client_ip() : ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        // User-Agent: solo en eventos de acceso al panel (para detectar bots)
+        $ua = null;
+        if (strpos((string)$event, 'login_') === 0) {
+            $ua = function_exists('m4_client_user_agent') ? m4_client_user_agent() : substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
+            if ($ua === '') $ua = null;
+        }
+        $stmt = $db->prepare("INSERT INTO admin_logs (event, detail, ip, ua) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$event, $detail, $ip, $ua]);
     } catch (\Throwable $e) { /* no romper por logs */ }
 }
 
@@ -143,12 +161,15 @@ function ensureBanTable() {
 }
 
 // Bloquear una IP (validada). Devuelve true si se ha registrado.
+// Las IPs de proxies/CDN (Cloudflare) no se pueden bloquear: bloquear una
+// de esas dejaría fuera a muchos visitantes legítimos a la vez.
 function banIp($ip, $note = '') {
     global $db;
     try {
         if (!$db) return false;
         $ip = trim((string)$ip);
         if ($ip === '' || !filter_var($ip, FILTER_VALIDATE_IP)) return false;
+        if (function_exists('m4_is_trusted_proxy_ip') && m4_is_trusted_proxy_ip($ip)) return false;
         ensureBanTable();
         $note = substr(trim((string)$note), 0, 200);
         $stmt = $db->prepare("INSERT OR REPLACE INTO banned_ips (ip, note, created_at) VALUES (?, ?, datetime('now'))");

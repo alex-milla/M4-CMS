@@ -67,6 +67,9 @@ list($lbl_wt_sitemap, )    = t('lbl_wt_sitemap');
 list($help_wt_sitemap, )   = t('help_wt_sitemap');
 list($btn_wt_google, )     = t('btn_wt_google_link');
 list($btn_wt_bing, )       = t('btn_wt_bing_link');
+list($lbl_proxy, )         = t('cfg_proxy_label');
+list($help_proxy, )        = t('cfg_proxy_help');
+list($lbl_proxy_list, )    = t('cfg_proxy_list');
 
 $sitemapUrl = rtrim(siteBaseUrl(), '/') . '/sitemap.xml';
 
@@ -97,6 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if (array_key_exists('wt_bing_token', $_POST)) {
                 saveSetting('wt_bing_token', m4_sanitize_verification_token($_POST['wt_bing_token']));
+            }
+
+            // Proxies de confianza (para resolver la IP real del visitante)
+            if (array_key_exists('trusted_proxies', $_POST)) {
+                saveSetting('trusted_proxies', m4_sanitize_trusted_proxies($_POST['trusted_proxies']));
             }
 
             // Cambios de cuenta admin (usuario o contraseña): exigen la
@@ -273,8 +281,19 @@ try {
                     </div>
                 </div>
 
-                <!-- Verificación para buscadores (Google / Bing) -->
+                <!-- Proxies de confianza (IP real del visitante) -->
                 <div class="admin-card">
+                    <h3><?php echo finsec_icon('shield', 16); ?> <?php echo htmlspecialchars($lbl_proxy); ?></h3>
+
+                    <p class="help-text" style="margin-bottom:12px;"><?php echo htmlspecialchars($help_proxy); ?></p>
+
+                    <div class="admin-form-group">
+                        <label for="trusted_proxies"><?php echo htmlspecialchars($lbl_proxy_list); ?></label>
+                        <textarea id="trusted_proxies" name="trusted_proxies" rows="3" class="mono" placeholder="10.0.0.0/8, 192.168.1.1"><?php echo htmlspecialchars($settings['trusted_proxies'] ?? ''); ?></textarea>
+                    </div>
+                </div>
+
+                <!-- Verificación para buscadores (Google / Bing) -->                <div class="admin-card">
                     <h3><?php echo finsec_icon('globe', 16); ?> <?php echo htmlspecialchars($lbl_webmaster); ?></h3>
 
                     <p class="help-text" style="margin-bottom:12px;"><?php echo htmlspecialchars($help_webmaster); ?></p>
