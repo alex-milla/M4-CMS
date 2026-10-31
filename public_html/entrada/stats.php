@@ -217,8 +217,13 @@ function stats_bar_row($label, $value, $max, $mono = false) {
 /**
  * Perfil del visitante desplegado en línea (debajo de la visita clicada).
  * Muestra todas sus visitas en la ventana de retención con sus páginas.
+ * Opciones:
+ *   mode          'inline' (render server-side) | 'fragment' (cargado por AJAX)
+ *   exclude_visit id de la visita que ya se ve arriba (no se repite)
  */
-function stats_visitor_profile_panel($profile, $profileId, $labels) {
+function stats_visitor_profile_panel($profile, $profileId, $labels, $opts = []) {
+    $mode          = (string)($opts['mode'] ?? 'inline');
+    $excludeVisit  = (string)($opts['exclude_visit'] ?? '');
     $st_profile        = $labels['profile'];
     $st_profile_visits = $labels['profile_visits'];
     $st_profile_actions= $labels['profile_actions'];
@@ -234,6 +239,12 @@ function stats_visitor_profile_panel($profile, $profileId, $labels) {
     $st_actions        = $labels['actions'];
     $deviceLabels      = $labels['devices'];
 
+    $visits = [];
+    foreach ((array)$profile['log'] as $pv) {
+        if ($excludeVisit !== '' && (string)$pv['visit_id'] === $excludeVisit) continue;
+        $visits[] = $pv;
+    }
+
     ob_start();
     ?>
     <div class="visitor-profile">
@@ -246,14 +257,22 @@ function stats_visitor_profile_panel($profile, $profileId, $labels) {
             <span class="visitor-profile__id mono"><?php echo htmlspecialchars($st_ip_origin); ?>: <?php echo htmlspecialchars($profile['ip']); ?></span>
 <?php endif; ?>
             <span class="visitor-profile__id"><?php echo htmlspecialchars($st_profile_range); ?> <?php echo htmlspecialchars(($profile['start'] ?? '') . ' → ' . ($profile['end'] ?? '')); ?></span>
+<?php if ($mode === 'fragment'): ?>
+            <button type="button" class="btn-link js-profile-close" title="<?php echo htmlspecialchars($st_close); ?>">
+                <?php echo finsec_icon('x', 14); ?> <?php echo htmlspecialchars($st_close); ?>
+            </button>
+<?php endif; ?>
         </div>
         <div class="visitor-profile__stats">
             <span><strong><?php echo (int)$profile['visits']; ?></strong> <?php echo htmlspecialchars(strtolower($st_profile_visits)); ?></span>
             <span><strong><?php echo (int)$profile['actions']; ?></strong> <?php echo htmlspecialchars(strtolower($st_profile_actions)); ?></span>
             <span><strong><?php echo htmlspecialchars(stats_duration($profile['duration'])); ?></strong> <?php echo htmlspecialchars(strtolower($st_profile_time)); ?></span>
         </div>
+<?php if (empty($visits)): ?>
+        <p class="help-text"><?php echo htmlspecialchars($labels['profile_none'] ?? '—'); ?></p>
+<?php else: ?>
         <div class="visitor-profile__visits">
-<?php foreach ($profile['log'] as $pv): ?>
+<?php foreach ($visits as $pv): ?>
             <div class="profile-visit">
                 <div class="profile-visit__head">
                     <span class="mono"><?php echo htmlspecialchars($pv['started_at']); ?></span>
@@ -288,11 +307,14 @@ if (!empty($compact['items'])):
             </div>
 <?php endforeach; ?>
         </div>
+<?php endif; ?>
+<?php if ($mode !== 'fragment'): ?>
         <div class="visitor-profile__foot">
             <a class="btn-link" href="<?php echo htmlspecialchars($labels['close_url']); ?>">
                 <?php echo finsec_icon('x', 14); ?> <?php echo htmlspecialchars($st_close); ?>
             </a>
         </div>
+<?php endif; ?>
     </div>
     <?php
     return ob_get_clean();
@@ -413,6 +435,42 @@ $channelLabels = [
     'ai' => $st_ai, 'other' => $st_other,
 ];
 $deviceLabels = ['desktop' => $st_desktop, 'mobile' => $st_mobile, 'tablet' => $st_tablet];
+
+// ------------------------------------------------------------
+//  Perfil del visitante: datos y modo fragmento (AJAX)
+// ------------------------------------------------------------
+// El perfil se despliega EN LÍNEA bajo la visita clicada. Con JavaScript se
+// carga por AJAX (sin recargar la página); sin JS funciona como enlace normal.
+$profilePlaced = false;
+$profileBaseUrl = '?period=' . urlencode($preset) . '&from=' . urlencode($start) . '&to=' . urlencode($end);
+$profileVisitId = trim((string)($_GET['visit'] ?? ''));
+$profileLabels = [
+    'profile'         => $st_profile,
+    'profile_visits'  => $st_profile_visits,
+    'profile_actions' => $st_profile_actions,
+    'profile_time'    => $st_profile_time,
+    'profile_range'   => $st_profile_range,
+    'ip_origin'       => $st_ip_origin,
+    'close_profile'   => t('stats_close_profile')[0],
+    'back'            => $st_back,
+    'col_actions'     => $st_col_actions,
+    'col_duration'    => $st_col_duration,
+    'referrer'        => $st_referrer,
+    'col_device'      => $st_col_device,
+    'actions'         => $st_actions,
+    'devices'         => $deviceLabels,
+    'close_url'       => $profileBaseUrl,
+];
+
+// Modo fragmento: devuelve solo el HTML del perfil (para el desplegable AJAX)
+if ((string)($_GET['fragment'] ?? '') === '1' && $profileId !== '') {
+    header('Content-Type: text/html; charset=utf-8');
+    echo stats_visitor_profile_panel($profile, $profileId, $profileLabels, [
+        'mode'          => 'fragment',
+        'exclude_visit' => $profileVisitId,
+    ]);
+    exit;
+}
 ?>
 <?php adminLayoutHead([
     'title'  => $page_title,
@@ -452,28 +510,6 @@ $deviceLabels = ['desktop' => $st_desktop, 'mobile' => $st_mobile, 'tablet' => $
 <?php
 // El perfil se despliega EN LÍNEA bajo la visita clicada (no en un bloque aparte).
 // Si el visitante no aparece entre las visitas visibles, se muestra arriba del registro.
-$profilePlaced = false;
-$profileBaseUrl = '?period=' . urlencode($preset) . '&amp;from=' . urlencode($start) . '&amp;to=' . urlencode($end);
-// Visita bajo la que se despliega el perfil (la clicada). Si no se indica,
-// se despliega bajo la primera visita visible de ese visitante.
-$profileVisitId = trim((string)($_GET['visit'] ?? ''));
-$profileLabels = [
-    'profile'         => $st_profile,
-    'profile_visits'  => $st_profile_visits,
-    'profile_actions' => $st_profile_actions,
-    'profile_time'    => $st_profile_time,
-    'profile_range'   => $st_profile_range,
-    'ip_origin'       => $st_ip_origin,
-    'close_profile'   => t('stats_close_profile')[0],
-    'back'            => $st_back,
-    'col_actions'     => $st_col_actions,
-    'col_duration'    => $st_col_duration,
-    'referrer'        => $st_referrer,
-    'col_device'      => $st_col_device,
-    'actions'         => $st_actions,
-    'devices'         => $deviceLabels,
-    'close_url'       => $profileBaseUrl,
-];
 ?>
 <?php if ($profile !== null && empty($profile['log'])): ?>
             <div class="msg-banner info">
@@ -658,20 +694,36 @@ foreach ($compact['items'] as $action):
                             </div>
 <?php if (!empty($visit['visitor_id'])): ?>
                             <div class="visit-card__foot">
+<?php $slotId = 'profile-slot-' . substr((string)$visit['visit_id'], 0, 12); ?>
+<?php $fragmentUrl = '?profile=' . urlencode((string)$visit['visitor_id']) . '&visit=' . urlencode((string)$visit['visit_id']) . '&fragment=1'; ?>
 <?php if ($isProfileOpen): ?>
-                                <a class="btn-link" href="<?php echo htmlspecialchars($profileBaseUrl); ?>">
-                                    <?php echo finsec_icon('x', 14); ?> <?php echo htmlspecialchars(t('stats_close_profile')[0]); ?>
+                                <a class="btn-link js-profile-toggle" href="<?php echo htmlspecialchars($profileBaseUrl); ?>"
+                                   data-target="<?php echo htmlspecialchars($slotId); ?>" data-open="1"
+                                   data-label="<?php echo htmlspecialchars($st_profile); ?>"
+                                   data-close-label="<?php echo htmlspecialchars(t('stats_close_profile')[0]); ?>">
+                                    <?php echo finsec_icon('x', 14); ?> <span class="js-profile-label"><?php echo htmlspecialchars(t('stats_close_profile')[0]); ?></span>
                                 </a>
 <?php else: ?>
-                                <a class="btn-link" href="<?php echo htmlspecialchars($profileBaseUrl); ?>&amp;profile=<?php echo urlencode((string)$visit['visitor_id']); ?>&amp;visit=<?php echo urlencode((string)$visit['visit_id']); ?>#<?php echo htmlspecialchars($visitAnchor); ?>">
-                                    <?php echo finsec_icon('eye', 14); ?> <?php echo htmlspecialchars($st_profile); ?>
+                                <a class="btn-link js-profile-toggle" href="<?php echo htmlspecialchars($profileBaseUrl); ?>&amp;profile=<?php echo urlencode((string)$visit['visitor_id']); ?>&amp;visit=<?php echo urlencode((string)$visit['visit_id']); ?>#<?php echo htmlspecialchars($visitAnchor); ?>"
+                                   data-target="<?php echo htmlspecialchars($slotId); ?>"
+                                   data-url="<?php echo htmlspecialchars($fragmentUrl); ?>"
+                                   data-label="<?php echo htmlspecialchars($st_profile); ?>"
+                                   data-close-label="<?php echo htmlspecialchars(t('stats_close_profile')[0]); ?>"
+                                   data-loading="<?php echo htmlspecialchars(t('stats_profile_loading')[0]); ?>">
+                                    <?php echo finsec_icon('eye', 14); ?> <span class="js-profile-label"><?php echo htmlspecialchars($st_profile); ?></span>
                                 </a>
+<?php endif; ?>
+                            </div>
+                            <div class="visit-profile-slot" id="<?php echo htmlspecialchars($slotId); ?>"<?php echo $isProfileOpen ? '' : ' hidden'; ?>>
+<?php if ($isProfileOpen): ?>
+                                <?php echo stats_visitor_profile_panel($profile, $profileId, $profileLabels, [
+                                    'mode'          => 'inline',
+                                    'exclude_visit' => (string)$visit['visit_id'],
+                                ]); ?>
 <?php endif; ?>
                             </div>
 <?php endif; ?>
 <?php if ($isProfileOpen && $profile !== null): ?>
-                            <!-- Perfil del visitante desplegado en línea -->
-                            <?php echo stats_visitor_profile_panel($profile, $profileId, $profileLabels); ?>
                             <?php $profilePlaced = true; ?>
 <?php endif; ?>
                         </div>
@@ -680,7 +732,10 @@ foreach ($compact['items'] as $action):
                         <!-- El visitante no está entre las visitas visibles: se muestra arriba -->
                         <div class="admin-card" id="visitor-profile">
                             <h3><?php echo finsec_icon('eye', 16); ?> <?php echo htmlspecialchars($st_profile); ?></h3>
-                            <?php echo stats_visitor_profile_panel($profile, $profileId, $profileLabels); ?>
+                            <?php echo stats_visitor_profile_panel($profile, $profileId, $profileLabels, [
+                                'mode'          => 'inline',
+                                'exclude_visit' => $profileVisitId,
+                            ]); ?>
                         </div>
 <?php endif; ?>
                     </div>
@@ -877,4 +932,70 @@ foreach ($compact['items'] as $action):
 
             <p class="help-text"><?php echo htmlspecialchars($st_self); ?></p>
 <?php endif; ?>
-<?php adminLayoutFooter(); ?>
+<?php
+// Desplegable del perfil del visitante: carga por AJAX sin recargar la página.
+$statsJs = <<<'JS'
+    (function () {
+        var LOADING = document.createElement('div');
+        LOADING.className = 'visitor-profile__loading';
+
+        function setLabel(toggle, text) {
+            var label = toggle.querySelector('.js-profile-label');
+            if (label) label.textContent = text;
+        }
+
+        function collapse(toggle, slot) {
+            slot.hidden = true;
+            slot.innerHTML = '';
+            slot.removeAttribute('data-loaded');
+            toggle.removeAttribute('data-open');
+            setLabel(toggle, toggle.getAttribute('data-label') || '');
+            var icon = toggle.querySelector('svg');
+            if (icon) icon.outerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+        }
+
+        document.addEventListener('click', function (ev) {
+            var closeBtn = ev.target.closest('.js-profile-close');
+            if (closeBtn) {
+                var panel = closeBtn.closest('.visitor-profile');
+                var host = panel ? panel.closest('.visit-profile-slot') : null;
+                var toggle = host ? document.querySelector('.js-profile-toggle[data-target="' + host.id + '"]') : null;
+                if (host && toggle) { ev.preventDefault(); collapse(toggle, host); }
+                return;
+            }
+
+            var toggle = ev.target.closest('.js-profile-toggle');
+            if (!toggle) return;
+            var slot = document.getElementById(toggle.getAttribute('data-target'));
+            if (!slot) return;               // sin destino -> el enlace navega (fallback sin JS)
+            ev.preventDefault();
+
+            if (toggle.getAttribute('data-open') === '1') { collapse(toggle, slot); return; }
+
+            slot.hidden = false;
+            if (slot.getAttribute('data-loaded') === '1') {
+                toggle.setAttribute('data-open', '1');
+                return;
+            }
+            slot.innerHTML = '';
+            LOADING.textContent = toggle.getAttribute('data-loading') || 'Cargando…';
+            slot.appendChild(LOADING);
+
+            var url = toggle.getAttribute('data-url');
+            if (!url) { return; }
+            fetch(url, { headers: { 'X-Requested-With': 'm4-fetch' }, credentials: 'same-origin' })
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    slot.innerHTML = html;
+                    slot.setAttribute('data-loaded', '1');
+                    toggle.setAttribute('data-open', '1');
+                    setLabel(toggle, toggle.getAttribute('data-close-label') || '');
+                })
+                .catch(function () {
+                    slot.innerHTML = '<div class="visitor-profile__loading">?</div>';
+                });
+        });
+    })();
+JS;
+adminLayoutFooter($statsJs);
+?>

@@ -100,7 +100,7 @@ The admin panel includes a lightweight, self-hosted web analytics module (**Stat
   - *Visit log*: every session with its date, device, browser, OS, origin IP, entry referrer and the sequence of pages viewed, plus a link to the **visitor profile**,
   - reports for pages, entry pages, searched keywords, referrers, devices, browsers, operating systems, visits per hour and response codes.
 
-The **visitor profile** is deployed **inline under the visit you click** (no separate block at the top of the page): it shows every visit of that visitor across the whole retention window — date, pages viewed, duration, referrer, origin IP and device — plus a *Close profile* link to collapse it again.
+The **visitor profile** unfolds **inline under the visit you click**, like a real accordion: the profile is loaded on demand (no page reload) and collapses again with a second click. It shows every visit of that visitor across the whole retention window — date, pages viewed, duration, referrer, origin IP and device — with a *Close profile* button. Without JavaScript the link still opens the profile server-side.
 
 Technical requests (`/favicon.ico`, `/robots.txt`, `apple-touch-icon`, `/.well-known/…`) are **not** tracked: they are browser housekeeping, not visits. The panel and site stylesheets are requested with a `?v=<version>` parameter, so a new release always invalidates the browser cache and the interface never shows an outdated stylesheet.
 

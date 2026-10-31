@@ -1277,5 +1277,18 @@ body.theme-finsec-dark .badge.danger { background: rgba(127, 29, 29, 0.25); colo
 .profile-action--more { font-style: italic; color: var(--text-3); }
 .visitor-profile__foot { margin-top: 10px; }
 
+/* Hueco donde se despliega el perfil (AJAX) */
+.visit-profile-slot { margin-top: 0; }
+.visit-profile-slot[hidden] { display: none; }
+.visitor-profile__loading {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--brand-500);
+    border-radius: var(--radius-md);
+    background: var(--muted);
+    color: var(--text-2);
+    font-size: 0.8125rem;
+}
+
 /* Barras por hora */
 .chart-bars--hourly { height: 120px; }

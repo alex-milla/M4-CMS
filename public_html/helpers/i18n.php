@@ -383,6 +383,7 @@ function t($key) {
         'stats_period_label' => ['en' => 'Period', 'es' => 'Periodo'],
         'stats_profile_range' => ['en' => 'Visits from', 'es' => 'Visitas desde'],
         'stats_close_profile' => ['en' => 'Close profile', 'es' => 'Cerrar perfil'],
+        'stats_profile_loading' => ['en' => 'Loading profile…', 'es' => 'Cargando perfil…'],
         'stats_ip_origin' => ['en' => 'Origin IP', 'es' => 'IP de origen'],
 
         // --- Privacidad de la analítica (IP de origen) ---
