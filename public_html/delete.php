@@ -106,5 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p><?php echo htmlspecialchars($_footer_cms); ?></p>
         </footer>
     </div>
+    <script><?php echo postCodeCopyScript(); ?></script>
 </body>
 </html>

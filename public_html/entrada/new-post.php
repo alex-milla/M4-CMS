@@ -106,6 +106,7 @@ adminLayoutHead([
         <div class="admin-form-group">
             <label for="content"><?php echo htmlspecialchars(t('field_content_label')[0]); ?></label>
             <textarea id="content" name="content" rows="10" placeholder="<?php echo htmlspecialchars(t('field_content_ph')[0]); ?>" required></textarea>
+            <p class="help-text" style="margin:6px 0 0;font-size:0.75rem;color:var(--text-3);"><?php echo htmlspecialchars(t('help_post_code')[0]); ?></p>
         </div>
 
         <button type="submit" class="btn-primary"><?php echo finsec_icon('check', 16); ?> <?php echo htmlspecialchars(t('btn_save_post')[0]); ?></button>

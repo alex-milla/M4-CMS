@@ -387,6 +387,14 @@ function t($key) {
         'stats_this_visit' => ['en' => 'this visit', 'es' => 'esta visita'],
         'stats_profile_visits_one' => ['en' => 'visit', 'es' => 'visita'],
         'stats_profile_actions_one' => ['en' => 'page view', 'es' => 'página vista'],
+
+        // --- Bloques de código en las publicaciones ---
+        'post_code_default_label' => ['en' => 'Code', 'es' => 'Código'],
+        'post_code_copy' => ['en' => 'Copy', 'es' => 'Copiar'],
+        'post_code_copied' => ['en' => 'Copied!', 'es' => '¡Copiado!'],
+        'post_code_lines' => ['en' => 'lines', 'es' => 'líneas'],
+        'post_code_line_one' => ['en' => 'line', 'es' => 'línea'],
+        'help_post_code' => ['en' => 'Tip: wrap a block between [code] and [/code] to show it as a collapsible box with a "Copy" button. You can give it a title with [code=Indicators].', 'es' => 'Truco: enclose un fragmento entre [code] y [/code] para mostrarlo como una caja plegable con botón "Copiar". Puedes ponerle un título con [code=Indicadores].'],
         'stats_ip_origin' => ['en' => 'Origin IP', 'es' => 'IP de origen'],
 
         // --- Privacidad de la analítica (IP de origen) ---

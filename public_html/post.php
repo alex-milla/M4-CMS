@@ -198,5 +198,6 @@ list($_status_updated, )   = t('msg_status_updated');
             <p><?php echo htmlspecialchars($siteTitle); ?></p>
         </footer>
     </div>
+    <script><?php echo postCodeCopyScript(); ?></script>
 </body>
 </html>

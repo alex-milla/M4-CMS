@@ -50,6 +50,23 @@ check('siteBaseUrl', preg_match('#^https?://#', siteBaseUrl()) === 1);
 check('t() translation', t('nav_login')[0] !== 'nav_login');
 check('postExcerptHtml', strpos(postExcerptHtml(['content' => "a\n\nb"]), 'a') !== false);
 
+// --- Bloques de código [code]...[/code] ---
+$codeContent = "Intro\n\n[code]\n192.42.116[]100\n95.216.5[]90\n[/code]\n\nCierre";
+$codeHtml = postContentHtml($codeContent);
+check('code: genera el bloque', strpos($codeHtml, 'class="post-code"') !== false);
+check('code: usa details desplegable', strpos($codeHtml, '<details class="post-code__details"') !== false);
+check('code: boton de copiar', strpos($codeHtml, 'post-code__copy') !== false);
+check('code: conserva el contenido literal', strpos($codeHtml, '192.42.116[]100') !== false);
+check('code: no deja marcadores', strpos($codeHtml, '@@M4CODE') === false);
+check('code: escapa el HTML del autor', strpos(postContentHtml("[code]<script>alert(1)</script>[/code]"), '<script>alert(1)</script>') === false);
+check('code: no autoenlaza dentro', strpos(postContentHtml("[code]https://ejemplo.com/x[/code]"), '<a href=') === false);
+check('code: titulo opcional', strpos(postContentHtml("[code=Indicadores]\n192.42.116[]100\n[/code]"), 'Indicadores') !== false);
+check('code: el texto normal sigue con autoenlace', strpos(postContentHtml("Ver https://ejemplo.com/x"), '<a href=') !== false);
+// Extracto: si el primer bloque es de codigo, se pasa al siguiente texto
+$excerpt = postExcerptHtml(['content' => "[code]\n192.42.116[]100\n[/code]\n\nTexto real del post"]);
+check('code: el extracto salta el bloque de codigo', strpos($excerpt, '192.42') === false && strpos($excerpt, 'Texto real') !== false);
+check('code: extracto sin marcadores', strpos($excerpt, '@@M4CODE') === false);
+
 // --- Bloqueo de IPs (anti-fuerza bruta) ---
 check('banIp', banIp('198.51.100.5', 'smoke') === true);
 check('isIpBanned', isIpBanned('198.51.100.5') === true);

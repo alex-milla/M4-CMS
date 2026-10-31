@@ -3,6 +3,7 @@
 include_once 'config.php';
 include_once 'db/functions.php';
 include_once 'helpers/i18n.php';
+include_once 'helpers/content.php';
 
 createTable();
 
@@ -34,7 +35,15 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
             <category><?php echo htmlspecialchars($post['category']); ?></category>
             <?php endif; ?>
             <description><?php
-                $desc = strip_tags((string)$post['content']);
+                // Los bloques [code] no aportan en un feed: se omiten
+                $rawDesc = (string)$post['content'];
+                if (function_exists('postExtractCodeBlocks')) {
+                    $tmpDesc = $rawDesc;
+                    postExtractCodeBlocks($tmpDesc);
+                    $rawDesc = $tmpDesc;
+                }
+                $rawDesc = preg_replace('/@@M4CODE\d+@@/', '', $rawDesc);
+                $desc = trim(preg_replace('/\s+/', ' ', strip_tags($rawDesc)));
                 $desc = function_exists('mb_substr') ? mb_substr($desc, 0, 300) : substr($desc, 0, 300);
                 echo htmlspecialchars($desc, ENT_QUOTES | ENT_XML1, 'UTF-8');
             ?></description>

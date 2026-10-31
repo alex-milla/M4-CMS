@@ -7,6 +7,7 @@ A lightweight, self-hosted content management system built in PHP with SQLite. M
 - Single-file SQLite database, no external services or dependencies
 - FinSec design system with light/dark mode and a single brand accent
 - Public frontend: posts, categories, tags, search and pagination
+- **Code blocks**: wrap a fragment between `[code]` and `[/code]` in the post content to render it as a collapsible box (with an optional title, `[code=Indicators]`) and a **Copy** button. The text is kept verbatim, so what you copy is exactly what you wrote
 - RSS feed, XML sitemap and custom 404 page
 - SEO-friendly URLs
 - Admin panel: dashboard KPIs, post management, bulk actions, settings and logs

@@ -793,3 +793,79 @@ footer {
     button, .btn, nav a, .pagination a { min-height: 44px; }
     input[type="text"], input[type="password"], input[type="search"], textarea, select { min-height: 44px; }
 }
+
+/* ===================================================================
+   BLOQUES DE CODIGO ([code]...[/code]) - plegables y copiables
+   =================================================================== */
+
+.post-code {
+    margin: 18px 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+    overflow: hidden;
+}
+.post-code__bar {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+}
+.post-code__details { flex: 1 1 auto; min-width: 0; }
+.post-code__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    color: var(--text-1);
+}
+.post-code__head::-webkit-details-marker { display: none; }
+.post-code__head:hover .post-code__title { color: var(--brand-500); }
+.post-code__chevron {
+    flex-shrink: 0;
+    color: var(--text-2);
+    transition: transform 0.15s ease;
+}
+.post-code__details[open] .post-code__chevron { transform: rotate(90deg); }
+.post-code__title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: color 0.15s ease;
+}
+.post-code__meta { font-size: 0.75rem; color: var(--text-2); }
+.post-code__pre {
+    margin: 10px 0 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-1);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    white-space: pre;
+    overflow: auto;
+    max-height: 420px;
+    tab-size: 4;
+}
+.post-code__copy {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+.post-code__copy:hover { color: var(--brand-500); border-color: var(--brand-300); }
+.post-code__copy.is-copied { color: var(--success); border-color: var(--success); }
+.post-code__copy:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--brand-500); }
