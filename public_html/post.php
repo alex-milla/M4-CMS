@@ -211,7 +211,6 @@ if ($prevPost || $nextPost):
                         </span>
                     </a>
 <?php endif; ?>
-                    <a class="post-nav__back" href="index.php"><?php echo htmlspecialchars($_back); ?></a>
 <?php if ($nextPost): ?>
                     <a class="post-nav__link post-nav__link--next" href="<?php echo htmlspecialchars(postUrl($nextPost['slug'] !== '' ? $nextPost['slug'] : $nextPost['id'])); ?>">
                         <span class="post-nav__text">
@@ -222,6 +221,7 @@ if ($prevPost || $nextPost):
                     </a>
 <?php endif; ?>
                 </nav>
+                <a class="post-nav__back" href="index.php"><?php echo htmlspecialchars($_back); ?></a>
 <?php else: ?>
                 <p style="margin-top: 24px;"><a href="index.php"><?php echo finsec_icon('arrow-left', 14); ?> <?php echo htmlspecialchars($_back); ?></a></p>
 <?php endif; ?>
